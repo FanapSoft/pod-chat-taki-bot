@@ -1,9 +1,29 @@
 import { Meteor } from 'meteor/meteor';
 import Links from './collections/Links.js';
+import Configs from './collections/Configs'
 
 Meteor.startup(() => {
+  if(Configs.collection.find().count() === 0) {
+    let data = [
+      {
+        name: 'botToken',
+        value: "0bea561f71af4cc9829afce8ac472f2f",
+      },
+      {
+        name: 'questionsDelayInSecond',
+        value: {enabled: true, seconds: 60},
+      },
+      {
+        name: 'botActive',
+        value: true,
+      }
+    ];
+
+    data.forEach(item => Configs.collection.insert(item))
+  }
+
   // if the Links collection is empty
-  if (Links.find().count() === 0) {
+  /*if (Links.find().count() === 0) {
     const data = [
       {
         title: 'Do the Tutorial',
@@ -28,5 +48,5 @@ Meteor.startup(() => {
     ];
 
     data.forEach(link => Links.insert(link));
-  }
+  }*/
 });

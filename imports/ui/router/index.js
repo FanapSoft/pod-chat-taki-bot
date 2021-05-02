@@ -31,11 +31,9 @@ export default new Router({
                     path: "/admins",
                     component: () => import("../pages/Admins"),
                 },
-
                 {
-                    name: "Register",
-                    path: "register",
-                    component: () => import("../pages/Register"),
+                    path: "/configs",
+                    component: () => import("../pages/Configs"),
                 },
 
             ]

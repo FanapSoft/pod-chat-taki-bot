@@ -14,4 +14,6 @@ Meteor.startup(() => {
     }
 
     const user = Accounts.findUserByUsername(SEED_USERNAME);
+
+
 });
