@@ -5,6 +5,43 @@ Meteor.methods({
     'usersList'() {
         return Meteor.users.find({}).fetch()
     },
+    'usersCreate'(username, password) {
+        check(username, String);
+        check(password, String);
+        return Accounts.createUser({
+            username: username,
+            password: password
+        }, )
+    },
+    'usersUpdate'(id, username, password) {
+        check(username, String);
+        check(password, String);
+        const user = Meteor.users.findOne({_id: id});
+
+        if(!user) {
+            throw new Meteor.Error('500', 'Not found', 'the user is not found');
+        }
+
+        user.username = username;
+        user.password = password;
+        Accounts.setUsername(id,username);
+        Accounts.setPassword(id,password);
+        return {
+            result: 'success'
+        }
+        /*Meteor.users.update(user._id, {
+            $set: {
+                username: username,
+                password: password
+            }
+        }, (error, result) => {
+            if(error)
+                return error
+            else
+                return result
+        })*/
+    },
+
 });
 
 
