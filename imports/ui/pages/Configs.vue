@@ -20,6 +20,12 @@
               <v-text-field v-model="botToken"></v-text-field>
             </td>
           </tr>
+          <tr>
+            <th>توکن ادمین</th>
+            <td>
+              <v-text-field v-model="adminToken"></v-text-field>
+            </td>
+          </tr>
           <tr >
             <th>فاصله زمانی بین سوالات</th>
             <td>
@@ -34,9 +40,9 @@
             </td>
           </tr>
           <tr >
-            <th>فعال بودن ربات</th>
+            <th>فعال بودن ربات </th>
             <td>
-              <v-switch v-model="botActive"></v-switch>
+              <v-switch v-model="botActive">آیا ربات به کاربران پاسخ بدهد ؟</v-switch>
             </td>
           </tr>
           </tbody>
@@ -46,25 +52,112 @@
         <v-btn @click="save">ذخیره</v-btn>
       </v-card-actions>
     </v-card>
+
+    <v-card class="mt-4">
+      <v-simple-table>
+        <template v-slot:default>
+          <tbody v-if="configs">
+          <tr >
+            <th>روشن کردن کلاینت ربات </th>
+            <td v-if="botClientStatus">
+              <v-switch v-model="botClientIsActive"></v-switch>
+              <div>
+                  <span
+                      v-if="botClientStatus.active"
+
+                      class="green--text">کلاینت ربات فعال است</span>
+                  <span
+                      v-else
+
+                      class="red--text">کلاینت ربات غیرفعال است</span>
+              </div>
+              <div>
+                <span class="red--text">خطا: </span>
+                <span v-if="botClientStatus.error" class="red--text">{{botClientStatus.error}}</span>
+                <span v-else>خطایی نیست</span>
+              </div>
+            </td>
+          </tr>
+          <tr >
+            <th>روشن کردن کلاینت ادمین </th>
+            <td>
+              <v-switch v-model="adminClientIsActive"></v-switch>
+              <div>
+                  <span
+                      v-if="adminClientStatus.active"
+
+                      class="green--text">کلاینت ادمین فعال است</span>
+                <span
+                    v-else
+
+                    class="red--text">کلاینت ادمین غیرفعال است</span>
+              </div>
+              <div>
+                <span class="red--text">خطا: </span>
+                <span v-if="adminClientStatus.error" class="red--text">{{adminClientStatus.error}}</span>
+                <span v-else>خطایی نیست</span>
+              </div>
+            </td>
+          </tr>
+          </tbody>
+        </template>
+      </v-simple-table>
+    </v-card>
   </v-container>
 </template>
 
 <script>
+import Configs from "../../api/collections/Configs"
 export default {
   name: "Configs",
   data:()=>({
     configs: null,
     message: '',
     error: '',
+    botClientCollection: null,
   }),
+  created() {
+    //this.botClientCollection = new Mongo.Collection('botClientStatus')
+    //used $subscribe instead
+    //const handle = Meteor.subscribe("botClientStatus");
+  },
+  meteor: {
+    $subscribe: {
+      'Configs': [],
+    },
+    configs(){
+      return Configs.collection.find({})
+    },
+    botClientStatus() {
+      const res = Configs.collection.findOne('botClientStatus');
+      return res ? res.value : {};
+    },
+    adminClientStatus() {
+      const res = Configs.collection.findOne('adminClientStatus');
+      return res ? res.value : {};
+    },
+  },
   computed: {
     botToken: {
       get() {
-          return this.configs ? this.configs.find(i => i.name === 'botToken').value : false
+          return this.configs ? this.configs.find(i => i._id === 'botToken').value : false
       },
       set(val) {
         this.configs.forEach(item => {
-          if(item.name === 'botToken') {
+          if(item._id === 'botToken') {
+            item.value = val;
+            item.hasChanges = true;
+          }
+        })
+      }
+    },
+    adminToken: {
+      get() {
+          return this.configs ? this.configs.find(i => i._id === 'adminToken').value : false
+      },
+      set(val) {
+        this.configs.forEach(item => {
+          if(item._id === 'adminToken') {
             item.value = val;
             item.hasChanges = true;
           }
@@ -73,11 +166,11 @@ export default {
     },
     questionsDelaySeconds: {
       get() {
-        return this.configs ? this.configs.find(i => i.name === 'questionsDelayInSecond').value.seconds : false
+        return this.configs ? this.configs.find(i => i._id === 'questionsDelayInSecond').value.seconds : false
       },
       set(val) {
         this.configs.forEach(item => {
-          if(item.name === 'questionsDelayInSecond') {
+          if(item._id === 'questionsDelayInSecond') {
             item.value.seconds = val;
             item.hasChanges = true;
           }
@@ -86,11 +179,11 @@ export default {
     },
     questionsDelayEnabled: {
       get() {
-        return this.configs ? this.configs.find(i => i.name === 'questionsDelayInSecond').value.enabled : false
+        return this.configs ? this.configs.find(i => i._id === 'questionsDelayInSecond').value.enabled : false
       },
       set(val) {
         this.configs.forEach(item => {
-          if(item.name === 'questionsDelayInSecond') {
+          if(item._id === 'questionsDelayInSecond') {
             item.value.enabled = val;
             item.hasChanges = true;
           }
@@ -99,15 +192,35 @@ export default {
     },
     botActive: {
       get() {
-        return this.configs ? this.configs.find(i => i.name === 'botActive').value : false
+        return this.configs ? this.configs.find(i => i._id === 'botActive').value : false;
       },
       set(val) {
         this.configs.forEach(item => {
-          if(item.name === 'botActive') {
+          if(item._id === 'botActive') {
             item.value = val;
             item.hasChanges = true;
           }
         })
+      }
+    },
+    botClientIsActive: {
+      get() {
+        if(this.botClientStatus) {
+          return this.botClientStatus.active
+        }
+      },
+      set() {
+        this.toggleBotClientStatus()
+      }
+    },
+    adminClientIsActive: {
+      get() {
+        if(this.adminClientStatus) {
+          return this.adminClientStatus.active
+        }
+      },
+      set() {
+        this.toggleAdminClientStatus()
       }
     },
 
@@ -127,6 +240,13 @@ export default {
         this.configs = result;
       })
     },
+    toggleBotClientStatus() {
+      Meteor.call('toggleBotClient')
+    },
+    toggleAdminClientStatus() {
+      Meteor.call('toggleAdminClient')
+    },
+
     save() {
       this.configs.forEach(item => {
         if(item.hasChanges) {
@@ -143,11 +263,11 @@ export default {
           this.message = 'تغییرات ذخیره شد.'
         }
       });
-    }
+    },
   },
   mounted() {
     this.initialize();
-  }
+  },
 }
 </script>
 

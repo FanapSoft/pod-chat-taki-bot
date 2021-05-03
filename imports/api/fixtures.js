@@ -1,25 +1,37 @@
 import { Meteor } from 'meteor/meteor';
-import Links from './collections/Links.js';
-import Configs from './collections/Configs'
+import Configs from './collections/Configs';
+import chatClients from "../lib/talky/chatClients";
 
 Meteor.startup(() => {
   if(Configs.collection.find().count() === 0) {
+    //data.forEach(item => Configs.collection.insert(item))
     let data = [
       {
         name: 'botToken',
-        value: "0bea561f71af4cc9829afce8ac472f2f",
+        val: {value: "0bea561f71af4cc9829afce8ac472f3f"},
       },
       {
         name: 'questionsDelayInSecond',
-        value: {enabled: true, seconds: 60},
+        val: {value: {enabled: true, seconds: 60}},
       },
       {
         name: 'botActive',
-        value: true,
+        val: {value: true},
+      },
+      {
+        name: 'adminToken',
+        val: {value: '111'},
+      },
+      {
+        name: 'botClientStatus',
+        val: {value: {active: false, error: null}}
+      },
+      {
+        name: 'adminClientStatus',
+        val: {value: {active: false, error: null}}
       }
     ];
-
-    data.forEach(item => Configs.collection.insert(item))
+    data.forEach(item => Configs.collection.upsert(item.name, {$set: item.val}));
   }
 
   // if the Links collection is empty
