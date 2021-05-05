@@ -1,10 +1,8 @@
 import { Meteor } from 'meteor/meteor';
 import Configs from './collections/Configs';
-import chatClients from "../lib/talky/chatClients";
 
 Meteor.startup(() => {
-  if(Configs.collection.find().count() === 0) {
-    //data.forEach(item => Configs.collection.insert(item))
+  if(Configs.find().count() === 0) {
     let data = [
       {
         name: 'botToken',
@@ -31,7 +29,7 @@ Meteor.startup(() => {
         val: {value: {active: false, error: null}}
       }
     ];
-    data.forEach(item => Configs.collection.upsert(item.name, {$set: item.val}));
+    data.forEach(item => Configs.upsert(item.name, {$set: item.val}));
   }
 
   // if the Links collection is empty

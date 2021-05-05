@@ -125,15 +125,15 @@ export default {
     $subscribe: {
       'Configs': [],
     },
-    configs(){
-      return Configs.collection.find({})
-    },
+/*    configs(){
+      return Configs.find({})
+    },*/
     botClientStatus() {
-      const res = Configs.collection.findOne('botClientStatus');
+      const res = Configs.findOne('botClientStatus');
       return res ? res.value : {};
     },
     adminClientStatus() {
-      const res = Configs.collection.findOne('adminClientStatus');
+      const res = Configs.findOne('adminClientStatus');
       return res ? res.value : {};
     },
   },

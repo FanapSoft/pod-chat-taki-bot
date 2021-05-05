@@ -70,11 +70,15 @@ export default {
           link: '/admins'
         },
         {
-          title: 'Configs',
+          title: 'تنظیمات کلی سیستم',
           icon: 'mdi-view-dashboard',
           link: '/configs'
         },
-
+        {
+          title: 'مدیریت اکانت ادمین',
+          icon: 'mdi-view-dashboard',
+          link: '/manageAdminAccount'
+        },
       ]
     }
   },

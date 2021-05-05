@@ -35,6 +35,10 @@ export default new Router({
                     path: "/configs",
                     component: () => import("../pages/Configs"),
                 },
+                {
+                    path: "/manageAdminAccount",
+                    component: () => import("../pages/ManageAdminClient"),
+                },
 
             ]
         },

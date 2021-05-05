@@ -7,8 +7,11 @@ class Configs {
     }
 }
 
-export default new Configs();
+//export default new Configs();
+const CONFIGSCLASS = new Configs();
 
+export default CONFIGSCLASS.collection;
+export const ConfigsClass = CONFIGSCLASS;
 /*
 Lists.schema = new SimpleSchema({
     name: {type: String},

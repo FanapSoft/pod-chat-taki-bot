@@ -1,5 +1,3 @@
-import chatClients from "../imports/lib/talky/chatClients";
-
 Object.defineProperty(Promise.prototype, 'then', {
     writable: true
 })
@@ -7,7 +5,8 @@ Object.defineProperty(Promise.prototype, 'then', {
 import '../imports/api/fixtures'
 import '../imports/api/methods'
 import '../imports/api/publications'
-import Configs from "../imports/api/collections/Configs";
+import AdminClient from "./lib/talky/clients/adminClientClass";
+import BotClient from "./lib/talky/clients/botClientClass";
 
 const SEED_USERNAME = 'admin';
 const SEED_PASSWORD = 'podtalky';
@@ -22,7 +21,7 @@ Meteor.startup( () => {
 
     const user = Accounts.findUserByUsername(SEED_USERNAME);
 
-    Configs.collection.upsert('botClientStatus', {
-        $set: {value:{active:false, error: null}}
-    })
+    BotClient.updateStatus(false, null)
+    AdminClient.updateStatus(false, null)
+
 });
