@@ -6,28 +6,41 @@ Meteor.startup(() => {
     let data = [
       {
         name: 'botToken',
-        val: {value: "0bea561f71af4cc9829afce8ac472f3f"},
+        val: {value: "0bea561f71af4cc9829afce8ac472f2f"},
       },
       {
-        name: 'questionsDelayInSecond',
-        val: {value: {enabled: true, seconds: 60}},
+        name: 'botUsername',
+        val: {value: 'questions1BOT'}
+      },
+      {
+        name: 'botCommands',
+        val: {value: ['start','finish','scoreboard']}
+      },
+      {
+        name: 'botDefaultThread',
+        val: {value: '473534'}
       },
       {
         name: 'botActive',
         val: {value: true},
       },
       {
-        name: 'adminToken',
-        val: {value: '111'},
-      },
-      {
         name: 'botClientStatus',
         val: {value: {active: false, error: null}}
       },
       {
+        name: 'adminToken',
+        val: {value: '111'},
+      },
+      {
         name: 'adminClientStatus',
         val: {value: {active: false, error: null}}
-      }
+      },
+      {
+        name: 'questionsDelayInSecond',
+        val: {value: {enabled: true, seconds: 60}},
+      },
+
     ];
     data.forEach(item => Configs.upsert(item.name, {$set: item.val}));
   }

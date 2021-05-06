@@ -58,22 +58,37 @@
             <th>ثبت دستورات برای ربات</th>
             <td >
               <div>برای انجام این مورد باید توکن ربات را دریافت کرده و در تنظیمات ذخیره نمایید و ربات را فعال نمایید.</div>
-              <v-text-field v-model="botUsername"></v-text-field>
+              <v-text-field v-model="botCommandsList" dir="ltr">
+                <template v-slot:append>
+                  <v-btn
+                      @click="defineBotCommands">ثبت</v-btn>
+                </template>
+              </v-text-field>
             </td>
           </tr>
-
+          <tr >
+            <th>افزودن ربات به یک چت</th>
+            <td >
+              <div>برای این کار باید به talk..pod.ir بروید و با ارسال یک پیام در گروه شناسه ترد گروه را بیابید و شناسه را در زیر وارد نمایید. دقت کنید که ربات فقط از این ترد قابل استارت خواهد بود</div>
+              <v-text-field v-model="chatThreadId" label="Chat Thread Id" dir="ltr">
+                <template v-slot:append>
+                  <v-btn
+                      @click="addBotToThread">افزودن</v-btn>
+                </template>
+              </v-text-field>
+            </td>
+          </tr>
           </tbody>
         </template>
       </v-simple-table>
     </v-card>
-
     <v-card
-        v-if="botCreateResult"
+        v-if="commandsResult"
 
         style="direction: ltr !important;"
         class="mt-4">
-      BOT INFO:
-      <div >{{botCreateResult}}</div>
+      INFO:
+      <div >{{commandsResult}}</div>
     </v-card>
   </v-container>
 </template>
@@ -86,7 +101,9 @@ export default {
     message: '',
     error: '',
     botUsername: null,
-    botCreateResult: null
+    commandsResult: null,
+    botCommandsList: '',
+    chatThreadId: null
   }),
   created() {
   },
@@ -105,19 +122,51 @@ export default {
       const res = Configs.findOne('adminClientStatus');
       return res ? res.value : {};
     },
+    loadDefaultValues() {
+      const commands = Configs.findOne("botCommands");
+      if(commands){
+        this.botCommandsList = commands.value.join(',')
+      }
+      const dtr = Configs.findOne("botDefaultThread");
+      if(dtr){
+        this.chatThreadId = dtr.value
+      }
+    }
   },
   methods: {
     createBot() {
       Meteor.call('adminClientCreateBot', this.botUsername, (error, result) => {
         if(error){
           console.log(error);
-          this.botCreateResult = JSON.stringify(error) ;
+          this.commandsResult = JSON.stringify(error) ;
           return;
         }
-        console.log('Bot Profile', result);
-        this.botCreateResult = JSON.stringify(result);
+        console.log('Result:', result);
+        this.commandsResult = JSON.stringify(result);
 
       });
+    },
+    defineBotCommands() {
+      Meteor.call('adminClientSetBotCommands', this.botCommandsList.trim().split(','), (error, result) => {
+        if(error){
+          console.log(error);
+          this.commandsResult = JSON.stringify(error) ;
+          return;
+        }
+        console.log('Result:', result);
+        this.commandsResult = JSON.stringify(result);
+      })
+    },
+    addBotToThread(){
+      Meteor.call('adminClientAddBotToThread', this.chatThreadId, (error, result) => {
+        if(error){
+          console.log(error);
+          this.commandsResult = JSON.stringify(error) ;
+          return;
+        }
+        console.log('Result:', result);
+        this.commandsResult = JSON.stringify(result);
+      })
     }
   },
   mounted() {
@@ -126,6 +175,8 @@ export default {
       if(adminClientProfile)
         console.log('Admin Profile', adminClientProfile.value);
     }
+
+    this.loadDefaultValues;
   },
 }
 </script>

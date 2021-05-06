@@ -15,9 +15,10 @@
         <template v-slot:default>
           <tbody v-if="configs">
           <tr>
-            <th>توکن ربات</th>
+            <th>اطلاعات ربات</th>
             <td>
-              <v-text-field v-model="botToken"></v-text-field>
+              <div><v-text-field v-model="botToken" label="توکن"></v-text-field></div>
+              <div><v-text-field v-model="botUsername" label="نام کاربری (یوزرنیم)"></v-text-field></div>
             </td>
           </tr>
           <tr>
@@ -151,6 +152,20 @@ export default {
         })
       }
     },
+    botUsername: {
+      get() {
+          return this.configs ? this.configs.find(i => i._id === 'botUsername').value : false
+      },
+      set(val) {
+        this.configs.forEach(item => {
+          if(item._id === 'botUsername') {
+            item.value = val;
+            item.hasChanges = true;
+          }
+        })
+      }
+    },
+
     adminToken: {
       get() {
           return this.configs ? this.configs.find(i => i._id === 'adminToken').value : false

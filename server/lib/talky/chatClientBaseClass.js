@@ -25,7 +25,7 @@ class ChatClientBaseClass {
                     this.chatReady = true;
                     this.saveProfile();
                 })
-            })
+            });
             this.startErrorListener();
             this.startListeningToMessages();
 
@@ -45,10 +45,6 @@ class ChatClientBaseClass {
         Configs.upsert(this.statusKey, {$set:{value:{active:active, error:error}}});
     }
 
-    getCurrentUser(){
-
-    }
-
     getToken() {
         const record = Configs.findOne(this.tokenKey);
         return record ? record.value : null
@@ -64,9 +60,8 @@ class ChatClientBaseClass {
         });
     }
     saveProfile() {
-        const botProfile = this.client.getCurrentUser();
-        console.log(botProfile);
-        Configs.upsert(this.clientProfileKey, {$set: {value: botProfile}});
+        const userProfile = this.client.getCurrentUser();
+        Configs.upsert(this.clientProfileKey, {$set: {value: userProfile}});
     }
 
     /**
