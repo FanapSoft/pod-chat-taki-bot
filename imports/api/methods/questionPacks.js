@@ -34,12 +34,18 @@ Meteor.methods({
         check(title, String);
         check(startsAt, Date);
         check(endsAt, Date);
-        check(duration, Number);
-        check(threshold, Number);
-        check(status, Number);
+
+        const IsNumeric = Match.Where(function(num) {
+            return !isNaN(parseInt(num)) && isFinite(num);
+        });
+
+        check(duration, IsNumeric);
+        check(threshold, IsNumeric);
+        check(status, IsNumeric);
 
         return QuestionPacks.insert({
-            title, startsAt, endsAt, duration, threshold, status
+            title, startsAt, endsAt, duration, threshold, status,
+            createdAt: new Date()
         });
     },
     'questionPackUpdate'(params) {
@@ -62,18 +68,21 @@ Meteor.methods({
 
         const IsNumeric = Match.Where(function(num) {
             return !isNaN(parseInt(num)) && isFinite(num);
-        })
+        });
+
         check(duration, IsNumeric);
         check(threshold, IsNumeric);
         check(status, IsNumeric);
 
-        return QuestionPacks.update(_id, {
-            title,
-            startsAt,
-            endsAt,
-            duration: parseInt(duration),
-            threshold: parseInt(threshold),
-            status: parseInt(status)
+        QuestionPacks.update(_id, {
+            $set: {
+                title,
+                startsAt,
+                endsAt,
+                duration: parseInt(duration),
+                threshold: parseInt(threshold),
+                status: parseInt(status)
+            }
         });
     },
 

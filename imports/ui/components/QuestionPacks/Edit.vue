@@ -36,21 +36,23 @@
 
                   v-model="item.startsAt"
 
-                  placeholder="تاریخ شروع"
-                  locale="fa"
                   :locale-config="{
                       fa: {
-                        displayFormat: 'jYYYY/jMM/jDD',
+                        displayFormat: 'jYYYY/jMM/jDD HH:mm:ss',
                         lang: { label: 'شمسی' }
                       },
                       en: {
-                        displayFormat: 'YYYY/MM/DD',
+                        displayFormat: 'YYYY/MM/DD HH:mm:ss',
                         lang: { label: 'Gregorian' }
                       }
                     }"
                   :editable="true"
 
-                  format="YYYY/MM/DD"
+                  display-format="dddd jDD jMMMM jYYYY HH:mm:ss"
+                  type="datetime"
+
+                  locale="fa"
+                  placeholder="تاریخ شروع"
               ></jalali-date-picker>
             </v-col>
             <v-col
@@ -60,22 +62,19 @@
                   clearable
 
                   v-model="item.endsAt"
-                  type="datetime"
-                  placeholder="تاریخ پایان"
-                  locale="fa"
+
                   :locale-config="{
                       fa: {
-                        displayFormat: 'jYYYY/jMM/jDD',
+                        displayFormat: 'jYYYY/jMM/jDD HH:mm:ss',
                         lang: { label: 'شمسی' }
-                      },
-                      en: {
-                        displayFormat: 'YYYY/MM/DD',
-                        lang: { label: 'Gregorian' }
                       }
                     }"
                   :editable="true"
 
-                  format="YYYY/MM/DD"
+                  type="datetime"
+                  placeholder="تاریخ پایان"
+                  display-format="dddd jDD jMMMM jYYYY HH:mm:ss"
+                  locale="fa"
               ></jalali-date-picker>
             </v-col>
             <v-col

@@ -40,8 +40,6 @@
 
                   v-model="item.startsAt"
 
-                  placeholder="تاریخ شروع"
-                  locale="fa"
                   :locale-config="{
                       fa: {
                         displayFormat: 'jYYYY/jMM/jDD',
@@ -54,7 +52,10 @@
                     }"
                   :editable="true"
 
-                  format="YYYY/MM/DD"
+                  placeholder="تاریخ شروع"
+                  display-format="dddd jDD jMMMM jYYYY HH:mm:ss"
+                  type="datetime"
+                  locale="fa"
               ></jalali-date-picker>
             </v-col>
             <v-col
@@ -64,9 +65,7 @@
                   clearable
 
                   v-model="item.endsAt"
-                  type="datetime"
-                  placeholder="تاریخ پایان"
-                  locale="fa"
+
                   :locale-config="{
                       fa: {
                         displayFormat: 'jYYYY/jMM/jDD',
@@ -79,7 +78,10 @@
                     }"
                   :editable="true"
 
-                  format="YYYY/MM/DD"
+                  placeholder="تاریخ پایان"
+                  display-format="dddd jDD jMMMM jYYYY HH:mm:ss"
+                  type="datetime"
+                  locale="fa"
               ></jalali-date-picker>
             </v-col>
             <v-col
@@ -177,13 +179,12 @@ export default {
     save() {
       this.resetMessages();
 
-      Meteor.call('questionPackCreate', this.item, (error, result) => {
+      Meteor.call('questionPackCreate', {...this.item, startsAt: new Date(this.item.startsAt), endsAt: new Date(this.item.endsAt)}, (error, result) => {
         if (error) {
           console.log(error);
           this.error = error.reason ? error.reason : 'خطا: کنسول را بررسی کنید'
         } else {
           this.message = ' ایجاد شد.'
-          this.$emit('updateList')
         }
       });
       this.dialog = false;

@@ -39,7 +39,7 @@
                     class="mx-4"
                 ></v-divider>
                 <v-spacer></v-spacer>
-                <add @updateList="questionPacks"></add>
+                <add ></add>
               </v-toolbar>
             </template>
             <template v-slot:item.ind="{ item }">
@@ -60,7 +60,6 @@
                   @click="deleteItem(item._id)"
                   size="20">mdi-trash-can</v-icon>
             </template>
-
           </v-data-table>
 
           <v-pagination
