@@ -10,12 +10,13 @@ Meteor.methods({
         return AdminClient.client.getCurrentUser();
     },
     'adminClientCreateBot'(username) {
-
+        check(username, String)
         const promise = new Promise((resolve, reject) => {
-            AdminClient.client.createBot({botName:username}, result => {
+            AdminClient.client.createBot({botName:username.trim()}, result => {
                 bound(()=>{
                     if(!result.hasError && result.result.apiToken) {
                         console.log('Bot has been created and ready to use. I stored its api token too! Enjoy !!');
+                        Configs.upsert('botUsername', {$set: {value: username}});
                         Configs.update('botToken', {$set: {value: result.result.apiToken}}, (error, result) => {
                             BotClient.startChatClient();
                             //e01e773d405f4d64ae014f53eac20bcf

@@ -39,6 +39,10 @@ export default new Router({
                     path: "/manageAdminAccount",
                     component: () => import("../pages/ManageAdminClient"),
                 },
+                {
+                    path: "/questions",
+                    component: () => import("../pages/QuestionPacks"),
+                },
 
             ]
         },

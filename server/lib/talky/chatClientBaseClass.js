@@ -30,6 +30,8 @@ class ChatClientBaseClass {
             this.startListeningToMessages();
 
             this.updateStatus(true, null);
+        } else {
+            throw new Meteor.Error('Store the bot token first')
         }
     }
 
@@ -38,6 +40,7 @@ class ChatClientBaseClass {
             return;
         this.client.logout();
         this.client = null;
+        this.chatReady = false;
         this.updateStatus(false, null)
     }
 

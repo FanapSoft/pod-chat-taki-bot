@@ -1,5 +1,6 @@
 import { Meteor } from 'meteor/meteor';
 import Configs from './collections/Configs';
+import QuestionPacks from "./collections/QuestionPacks";
 
 Meteor.startup(() => {
   if(Configs.find().count() === 0) {
@@ -43,6 +44,31 @@ Meteor.startup(() => {
 
     ];
     data.forEach(item => Configs.upsert(item.name, {$set: item.val}));
+
+    data = [
+      {
+        startsAt: new Date(),
+        endsAt: new Date(new Date().setTime(new Date().getTime() + (1*60*60*1000))),
+        duration: 10,
+        threshold: 50,
+        title: 'پک سوال اول',
+        status: 3,
+        createdAt: new Date()
+      },
+    ];
+
+    for(let i = 0; i< 27; i++) {
+      QuestionPacks.insert({$set: {
+          startsAt: new Date(),
+          endsAt: new Date(new Date().setTime(new Date().getTime() + (1*60*60*1000))),
+          duration: 10,
+          threshold: 50,
+          title: 'پک سوال اول',
+          status: 3,
+          createdAt: new Date()
+        }
+      })
+    }
   }
 
   // if the Links collection is empty
