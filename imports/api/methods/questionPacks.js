@@ -63,9 +63,12 @@ Meteor.methods({
             throw new Meteor.Error('Id is required')
 
         check(title, String);
+/*
         check(startsAt, Date);
         check(endsAt, Date);
+*/
 
+/*
         const IsNumeric = Match.Where(function(num) {
             return !isNaN(parseInt(num)) && isFinite(num);
         });
@@ -73,6 +76,7 @@ Meteor.methods({
         check(duration, IsNumeric);
         check(threshold, IsNumeric);
         check(status, IsNumeric);
+*/
 
         QuestionPacks.update(_id, {
             $set: {

@@ -40,10 +40,13 @@ export default new Router({
                     component: () => import("../pages/ManageAdminClient"),
                 },
                 {
-                    path: "/questions",
+                    path: "/questionPacks",
                     component: () => import("../pages/QuestionPacks"),
                 },
-
+                {
+                    path: "/questions",
+                    component: () => import("../pages/Questions"),
+                },
             ]
         },
         {

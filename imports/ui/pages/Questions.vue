@@ -4,12 +4,12 @@
       <div class="col-md-12">
         <v-card>
           <v-data-table
-              v-if="questionPacks"
+              v-if="questionsList"
 
               disable-sort hide-default-footer disable-pagination
 
               :headers="listHeaders"
-              :items="questionPacks"
+              :items="questionsList"
               :page.sync="pagination.currentPage"
               :loading="loading"
               :items-per-page="20"
@@ -27,12 +27,29 @@
               <v-toolbar
                   flat
               >
-                <v-toolbar-title>پک های سوالات</v-toolbar-title>
+                <v-toolbar-title>سوالات</v-toolbar-title>
                 <v-divider
                     inset vertical
 
                     class="mx-4"
                 ></v-divider>
+                <v-autocomplete
+                    v-model="filterPackId"
+                    :items="searchQuestionPacksList"
+                    :loading="isLoadingPacks"
+                    :search-input.sync="searchPacks"
+                    color="white"
+                    hide-no-data
+                    hide-selected
+                    hide-details
+                    dense
+                    solo filled
+                    item-text="title"
+                    item-value="_id"
+                    label="انتخاب دسته سوالات"
+                    placeholder="برای فیلتر عنوان دسته را تایپ کنید"
+                    prepend-icon="mdi-database-search"
+                ></v-autocomplete>
                 <v-spacer></v-spacer>
                 <span >{{ pagination.realCount.toLocaleString() }}</span>
                 <v-divider
@@ -44,7 +61,7 @@
               </v-toolbar>
             </template>
             <template v-slot:item.ind="{ item }">
-              {{ (pagination.skip ? pagination.skip + questionPacks.indexOf(item) + 1 : questionPacks.indexOf(item) + 1) }}
+              {{ (pagination.skip ? pagination.skip + questionsList.indexOf(item) + 1 : questionsList.indexOf(item) + 1) }}
             </template>
             <template v-slot:item.date="{ item }">
               <div>
@@ -66,10 +83,9 @@
               <span v-if="item.status==3">شروع خواهد شد</span>
             </template>
             <template v-slot:item.actions="{ item, index }">
-              <v-icon @click="addQuestionsTo(item)">mdi-plus</v-icon>
               <edit
                   :key="index"
-                  :pack="item" @updateList="() => {questionPacks}"></edit>
+                  :question="item" @updateList="() => {questionsList}"></edit>
               <v-icon
                   @click="deleteItem(item._id)"
                   size="20">mdi-trash-can</v-icon>
@@ -102,23 +118,23 @@
 
 <script>
 import {Meteor} from "meteor/meteor";
+import Questions from "../../api/collections/Questions";
+import Add from "../components/Questions/Add"
+import Edit from "../components/Questions/Edit";
 import QuestionPacks from "../../api/collections/QuestionPacks";
-import Add from "../components/QuestionPacks/Add"
-import Edit from "../components/QuestionPacks/Edit";
 
 export default {
-  name: "QuestionPacks",
+  name: "Questions",
   components: {Edit, Add},
   data: () => ({
     dialogDelete: false,
     listHeaders: [
       {text: 'ردیف', value: "ind"},
-      //{ text: "creditAmount", value: "creditAmount" },
-      {text: 'شروع/پایان', value: "date"},
-      {text: 'مدت زمان', value: "duration"},
-      {text: 'threshold', value: "threshold"},
-      {text: 'عنوان پک سوال', value: "title"},
-      {text: 'وضعیت پک', value: "status"},
+      {text: 'شماره سوال', value: "order"},
+      {text: 'عنوان سوال', value: "question"},
+      {text: 'پاسخ های صحیح', value: "correctAnswers"},
+      {text: 'امتیاز  مثبت', value: "positiveScore"},
+      {text: 'امتیاز  منفی', value: "negativeScore"},
       {text: 'فعالیت ها', value: "actions"},
 
     ],
@@ -131,22 +147,40 @@ export default {
       currentPage: 1,
       perPage: 10
     },
-    itemToDelete: null
+    itemToDelete: null,
+
+    isLoadingPacks: false,
+    filterPackId: null,
+    searchPacks: null
   }),
 
   computed: {
   },
   meteor: {
     $subscribe: {
+      'Questions': [],
       'QuestionPacks': []
     },
-    questionPacks() {
+    searchQuestionPacksList() {
+      let reg = new RegExp(this.searchPacks);
+      this.isLoadingPacks = false;
+      return QuestionPacks.find({title: {$regex: reg} })
+    },
+    questionsList() {
       this.loading = true;
       //this.pagination.currentPage;
       this.calcCurrentPage();
 
-      const count = QuestionPacks.find().count();
-      const res = QuestionPacks.find({},{sort: {createdAt: -1}, limit: this.pagination.perPage, skip: this.pagination.skip});
+      let packId = null;
+
+      if(this.$route.query.packId) {
+        packId = this.$route.query.packId
+      }
+
+      const field = packId ? {packId: packId} : {}
+
+      const count = Questions.find().count();
+      const res = Questions.find(field, {sort: {createdAt: -1}, limit: this.pagination.perPage, skip: this.pagination.skip});
       this.pagination.count = count ? Math.ceil(count / this.pagination.perPage) : 1;
       this.pagination.realCount = count;
       this.loading = false;
@@ -154,12 +188,24 @@ export default {
     }
   },
   watch: {
+    filterPackId(val) {
+      if(val)
+        this.$router.push('/questions?packId=' + val)
+      else
+        this.$router.push('/questions')
+    },
+    searchPacks (val) {
+      if (this.isLoadingPacks) return
+
+      this.isLoadingPacks = true
+
+      this.searchQuestionPacksList
+    },
     'pagination.currentPage'(val) {
       this.refreshList();
     },
   },
-  created () {
-
+  mounted() {
   },
   methods: {
     calcCurrentPage() {
@@ -174,21 +220,15 @@ export default {
       this.refreshList()
     },
     async refreshList() {
-      this.questionPacks
+      this.questionsList
       //await this.getItems(this.pagination.currentPage);
     },
     deleteItem (item) {
       this.itemToDelete = item;
       this.dialogDelete = true
     },
-    addQuestionsTo(pack) {
-      if(!pack)
-        return;
-
-      this.$router.push('/questions?packId=' + pack._id)
-    },
     deleteItemConfirm () {
-      Meteor.call('questionPackRemove', this.itemToDelete, (error, result) => {
+      Meteor.call('questionRemove', this.itemToDelete, (error, result) => {
         if(error) {
           console.log(error);
           return;

@@ -1,11 +1,11 @@
 import { Mongo } from 'meteor/mongo';
 
 /**
- * Fields: id, packId, question, answers, correctAnswer, negativeScore, positiveScore
+ * Fields: id, packId, question, answers, correctAnswers, negativeScore, positiveScore, order, showAnswersToUser
  */
 class Questions {
     constructor() {
-        this.collection = new Mongo.Collection('SSOUsers');
+        this.collection = new Mongo.Collection('Questions');
     }
 }
 

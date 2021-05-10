@@ -35,53 +35,48 @@
             <v-col
                 cols="12"
             >
+              <v-text-field
+                  v-model="startsAt"
+
+                  dir="ltr"
+                  id="startsAt-input">
+                <template v-slot:append>
+                  <v-btn
+                      @click="startsAtVisibility=true" depressed><v-icon>mdi-calendar</v-icon></v-btn>
+                </template>
+              </v-text-field>
               <jalali-date-picker
-                  clearable
+                  v-model="startsAt"
 
-                  v-model="item.startsAt"
+                  :show="startsAtVisibility"
+                  @click="startsAtVisibility = true"
 
-                  :locale-config="{
-                      fa: {
-                        displayFormat: 'jYYYY/jMM/jDD',
-                        lang: { label: 'شمسی' }
-                      },
-                      en: {
-                        displayFormat: 'YYYY/MM/DD',
-                        lang: { label: 'Gregorian' }
-                      }
-                    }"
-                  :editable="true"
-
-                  placeholder="تاریخ شروع"
-                  display-format="dddd jDD jMMMM jYYYY HH:mm:ss"
                   type="datetime"
-                  locale="fa"
+                  format="Y/M/D HH:mm:ss"
+                  display-format="jYYYY/jMM/jDD HH:mm:ss"
+                  placeholder="تاریخ شروع"
+                  element="startsAt-input"
               ></jalali-date-picker>
             </v-col>
             <v-col
                 cols="12"
             >
+              <v-text-field
+                  v-model="endsAt"
+
+                  dir="ltr"
+                  id="endsAt-input">
+                <template v-slot:append>
+                  <v-btn @click="endsAtVisibility=true" depressed><v-icon>mdi-calendar</v-icon></v-btn>
+                </template>
+              </v-text-field>
               <jalali-date-picker
-                  clearable
+                  v-model="endsAt"
 
-                  v-model="item.endsAt"
-
-                  :locale-config="{
-                      fa: {
-                        displayFormat: 'jYYYY/jMM/jDD',
-                        lang: { label: 'شمسی' }
-                      },
-                      en: {
-                        displayFormat: 'YYYY/MM/DD',
-                        lang: { label: 'Gregorian' }
-                      }
-                    }"
-                  :editable="true"
-
-                  placeholder="تاریخ پایان"
-                  display-format="dddd jDD jMMMM jYYYY HH:mm:ss"
                   type="datetime"
-                  locale="fa"
+                  format="Y/M/D HH:mm:ss"
+                  placeholder="تاریخ پایان"
+                  element="endsAt-input"
               ></jalali-date-picker>
             </v-col>
             <v-col
@@ -173,11 +168,18 @@ export default {
       duration: 10,
       threshold: 50,
       status: 3
-    }
+    },
+    startsAt: null,
+    endsAt: null,
+    startsAtVisibility: false,
+    endsAtVisibility: false,
   }),
   methods: {
     save() {
       this.resetMessages();
+
+      this.item.startsAt = new Date(this.startsAt);
+      this.item.endsAt = new Date(this.endsAt);
 
       Meteor.call('questionPackCreate', {...this.item, startsAt: new Date(this.item.startsAt), endsAt: new Date(this.item.endsAt)}, (error, result) => {
         if (error) {

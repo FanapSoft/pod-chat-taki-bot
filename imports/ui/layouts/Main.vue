@@ -55,6 +55,11 @@ export default {
           link: '/dashboard'
         },
         {
+          title: 'پک های سوالات',
+          icon: 'mdi-view-dashboard',
+          link: '/questionPacks'
+        },
+        {
           title: 'سوالات',
           icon: 'mdi-view-dashboard',
           link: '/questions'

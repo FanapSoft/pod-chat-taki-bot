@@ -11,6 +11,7 @@
     "@babel/runtime": "^7.11.2",
     "bcrypt": "^5.0.1",
     "meteor-node-stubs": "^1.0.1",
+    "moment": "^2.29.1",
     "mongo-gui": "0.0.12",
     "podchat": "^9.4.4",
     "vue": "^2.6.12",

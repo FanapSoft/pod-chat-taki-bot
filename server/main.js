@@ -22,6 +22,5 @@ Meteor.startup( () => {
     const user = Accounts.findUserByUsername(SEED_USERNAME);
 
     BotClient.updateStatus(false, null)
-    AdminClient.updateStatus(false, null)
-
+    AdminClient.updateStatus(false, null);
 });
