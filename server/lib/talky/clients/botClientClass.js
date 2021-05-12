@@ -4,6 +4,7 @@ import Configs from "../../../../imports/api/collections/Configs";
 import SSOUsers, {SSOUsersClass} from "../../../../imports/api/collections/SSOUsers";
 import Answers, {AnswersClass} from "../../../../imports/api/collections/Answers";
 import QuestionPacks from "../../../../imports/api/collections/QuestionPacks";
+import Questions from "../../../../imports/api/collections/Questions";
 
 class BotClientClass extends ChatClientBaseClass {
     constructor() {
@@ -105,8 +106,8 @@ class BotClientClass extends ChatClientBaseClass {
             }
         ];
         this.Game = {
-            god: 'ma.amjadi', // 😈
-            gods: ['ma.amjadi', 'poddraw', 'n.soltani'],
+            god: 'f.naysee', // 😈
+            gods: ['ma.amjadi', 'poddraw', 'n.soltani', 'f.naysee'],
             duration: 10,
             threshold: 50,
             firstToReachTreshold: {},
@@ -118,7 +119,7 @@ class BotClientClass extends ChatClientBaseClass {
                 149486 // تاک قد کشیده
             ],
             admins: [
-                'ma.amjadi'
+                'f.naysee'
             ],
             stat: {
                 msgSendCount: 0,
@@ -128,6 +129,7 @@ class BotClientClass extends ChatClientBaseClass {
         };
 
         this.questionPack = null;
+        this.questionsList = null;
         this.loadIntervals = []
         this.Result = [];
         this.botSecondLevelCommands = ['شروع', 'پایان', 'بعدی', 'امتیاز', 'دستورها'];
@@ -141,6 +143,7 @@ class BotClientClass extends ChatClientBaseClass {
          * Only one question pack could be active at a time
          */
         this.questionPack = QuestionPacks.findOne({active: true});
+        this.questionsList = Questions.find({packId: this.questionPack._id, sort: {order: 1}});
 
         this.client.on('messageEvents', function (event) {
             bound(()=>{
@@ -589,8 +592,10 @@ class BotClientClass extends ChatClientBaseClass {
                 threadId: userData.answer.originThreadId,
                 repliedTo: userData.answer.originMessageId,
                 textMessage: userData.user.name + " در مسابقه ی این هفته امتیاز " + score + " را بدست آورد.\n\nزمان دقیق ارسال:\n" + new Intl.DateTimeFormat('fa', {
-                    dateStyle: 'long',
-                    timeStyle: 'medium'
+                    dateStyle: 'short',
+                    timeStyle: 'medium',
+                    hour12: false,
+                    timeZone: 'Asia/Tehran'
                 }).format(finishTime)
             }, {
                 onSent: function () {

@@ -66,6 +66,7 @@
               <span v-if="item.status==3">شروع خواهد شد</span>
             </template>
             <template v-slot:item.actions="{ item, index }">
+              <v-switch v-model="item.active" @change="deactivateAllPacksExcept(item)"></v-switch>
               <v-icon @click="addQuestionsTo(item)">mdi-plus</v-icon>
               <edit
                   :key="index"
@@ -186,6 +187,17 @@ export default {
         return;
 
       this.$router.push('/questions?packId=' + pack._id)
+    },
+    deactivateAllPacksExcept (item) {
+      Meteor.call('deactivateAllPacksExcept', item, (error, result) => {
+        if(error) {
+          console.log(error);
+          return;
+        }
+
+        console.log(result);
+      })
+      this.closeDelete()
     },
     deleteItemConfirm () {
       Meteor.call('questionPackRemove', this.itemToDelete, (error, result) => {

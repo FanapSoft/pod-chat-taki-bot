@@ -48,6 +48,23 @@ Meteor.methods({
             createdAt: new Date()
         });
     },
+    'deactivateAllPacksExcept'(pack) {
+        const packs = QuestionPacks.find({active: true});
+        packs.forEach(item => {
+            QuestionPacks.update(item._id, {
+                $set: {
+                    active: false
+                }
+            })
+        })
+
+        const pc = QuestionPacks.findOne({_id: pack._id})
+        return QuestionPacks.update(pack._id, {
+            $set: {
+                active: true
+            }
+        })
+    },
     'questionPackUpdate'(params) {
         let {
             _id,
