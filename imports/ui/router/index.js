@@ -47,6 +47,10 @@ export default new Router({
                     path: "/questions",
                     component: () => import("../pages/Questions"),
                 },
+                                {
+                    path: "/talkUsers",
+                    component: () => import("../pages/TalkUsers"),
+                },
             ]
         },
         {

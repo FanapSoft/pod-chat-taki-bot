@@ -67,7 +67,7 @@ export default {
         {
           title: 'کاربران',
           icon: 'mdi-view-dashboard',
-          link: '/users'
+          link: '/talkUsers'
         },
         {
           title: 'مدیران',

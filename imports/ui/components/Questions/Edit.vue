@@ -308,7 +308,6 @@ export default {
       this.isLoadingPacks = true
 
       this.searchQuestionsList
-      console.log(this.item)
     },
   }
 }

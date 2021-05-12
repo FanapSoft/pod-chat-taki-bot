@@ -1,7 +1,7 @@
 import { Mongo } from 'meteor/mongo';
 
 /**
- * Fields: id, startsAt, endsAt, duration, threshold, title, status
+ * Fields: id, startsAt, endsAt, duration, threshold, title, status, active
  * status: 1.started, 2.ended 3.will start
  */
 class QuestionPacks {

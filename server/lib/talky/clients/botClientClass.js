@@ -1,6 +1,9 @@
 import ChatClientBaseClass from "../chatClientBaseClass"
 import bound from "../../../../imports/lib/bound";
 import Configs from "../../../../imports/api/collections/Configs";
+import SSOUsers, {SSOUsersClass} from "../../../../imports/api/collections/SSOUsers";
+import Answers, {AnswersClass} from "../../../../imports/api/collections/Answers";
+import QuestionPacks from "../../../../imports/api/collections/QuestionPacks";
 
 class BotClientClass extends ChatClientBaseClass {
     constructor() {
@@ -124,16 +127,20 @@ class BotClientClass extends ChatClientBaseClass {
             }
         };
 
+        this.questionPack = null;
         this.loadIntervals = []
         this.Result = [];
         this.botSecondLevelCommands = ['شروع', 'پایان', 'بعدی', 'امتیاز', 'دستورها'];
-
-
     }
 
     startListeningToMessages() {
         if(!this.client)
             return;
+
+        /**
+         * Only one question pack could be active at a time
+         */
+        this.questionPack = QuestionPacks.findOne({active: true});
 
         this.client.on('messageEvents', function (event) {
             bound(()=>{
@@ -146,23 +153,79 @@ class BotClientClass extends ChatClientBaseClass {
 
         });
     }
-    handleNewMessage(event){
+    getUser(message) {
+        let res = null;
+        if(message.participant) {
+            res = SSOUsers.findOne({SSOId: message.participant.id});
+            if(res == undefined) {
+                SSOUsersClass.saveUser({
+                    SSOId: message.participant.id,
+                    username: message.participant.username,
+                    name: message.participant.name,
+                    firstName: message.participant.firstName,
+                    lastName: message.participant.lastName,
+                    joinedFromThread: message.threadId,
+                });
+                return SSOUsers.findOne({SSOId: message.participant.id});
+            } else
+                return res
+        }
+
+        return null;
+    }
+    getAnswer(user, pack) {
+        const answer = Answers.findOne({SSOUserId: user.SSOId, packId: pack._id});
+        if(answer == undefined){
+            AnswersClass.saveAnswer(user.SSOId, pack._id, {});
+            return Answers.findOne({SSOUserId: user.SSOId, packId: pack._id});
+        }
+
+        else
+            return answer;
+    }
+    handleNewMessage(event) {
         const message = event.result.message;
 
-        if(BotClient.messageIsOuterCommand(message.message)) {
-            this.handleOuterCommand(message);
+        const userData = {
+        };
+        userData.user = this.getUser(message);
+
+        if(this.questionPack) {
+            userData.answer = this.getAnswer(userData.user, this.questionPack);
+        } else {
+            BotClient.botSender(BotClient.client.replyTextMessage({
+                threadId: message.conversation.id,
+                repliedTo: message.id,
+                textMessage: "هنوز مسابقه ای برام تعریف نشده. بعدا باز امتحان کن"
+            }, {
+                onSent: function () {
+                }
+            }));
             return;
+        }
+
+        if(BotClient.messageIsOuterCommand(message.message)) {
+            this.handleOuterCommand(message, userData);
+            this.updateUserData(userData);
         }
 
         const nextLevelCommands = message.message.match(/^\/(شروع|پایان|بعدی|امتیاز|دستورها)$/);
         if (nextLevelCommands && nextLevelCommands[1]) {
-            BotClient.handleNextLevelCommand(message, nextLevelCommands);
-            return;
+            BotClient.handleNextLevelCommand(message, nextLevelCommands, userData);
+            this.updateUserData(userData);
         }
 
-        this.handleReplyMessages(message)
+        if (message.replyInfo && message.replyInfo.systemMetadata && typeof message.replyInfo.systemMetadata === 'string') {
+            this.handleReplyMessages(message, userData);
+            this.updateUserData(userData);
+        }
     }
-    handleOuterCommand(message) {
+    updateUserData(userData) {
+        SSOUsersClass.updateUserBySSOId(userData.user.SSOId, userData.user);
+        AnswersClass.updateAnswer(userData.user.SSOId, this.questionPack._id, userData.answer);
+    }
+    handleOuterCommand = function (message, userData) {
+        //console.log(message)
         const botUsername = Configs.findOne('botUsername');
         let string =  '\/(\\w+)@' + botUsername.value
         let ex = new RegExp(string.trim());
@@ -170,9 +233,12 @@ class BotClientClass extends ChatClientBaseClass {
 
         switch (command[1]) {
             case 'start':
-                if (new Date().getTime() < BotClient.Game.start) {
+                console.log('message:', message)
+                userData.answer.originThreadId = message.threadId;
+                userData.answer.originMessageId = message.id;
+                if (new Date().getTime() < this.questionPack.startsAt) {
                     const rtf2 = new Intl.RelativeTimeFormat('fa', {numeric: 'auto'});
-                    let timeDiff = Math.round((BotClient.Game.start - new Date().getTime()) / 1000);
+                    let timeDiff = Math.round((this.questionPack.startsAt - new Date().getTime()) / 1000);
                     let remainingTime = '';
                     if (timeDiff < 60) {
                         remainingTime = rtf2.format(timeDiff, 'second');
@@ -186,28 +252,26 @@ class BotClientClass extends ChatClientBaseClass {
                     BotClient.botSender(BotClient.client.replyTextMessage({
                         threadId: message.conversation.id,
                         repliedTo: message.id,
-                        textMessage: "🕐🕑🕒🕓🕕🕖🕗🕘🕙\n\nمسابقه هنوز شروع نشده، راس ساعت " + new Date(BotClient.Game.start).getHours() + ':' + new Date(BotClient.Game.start).getMinutes() + " میتونی دوباره همین دستور رو بزنی و مسابقه رو شروع کنی 😉\n\nتا " + remainingTime + " باید منتظر بمونی"
+                        textMessage: "🕐🕑🕒🕓🕕🕖🕗🕘🕙\n\nمسابقه هنوز شروع نشده، راس ساعت " + new Date(this.questionPack.startsAt).getHours() + ':' + new Date(this.questionPack.startsAt).getMinutes() + " میتونی دوباره همین دستور رو بزنی و مسابقه رو شروع کنی 😉\n\nتا " + remainingTime + " باید منتظر بمونی"
                     }, {
-                        onSent: function () {
-                        }
+                        onSent: function () {}
                     }));
-                } else if (new Date().getTime() > BotClient.Game.end) {
+                } else if (new Date().getTime() > this.questionPack.endsAt) {
                     BotClient.botSender(BotClient.client.replyTextMessage({
                         threadId: message.conversation.id,
                         repliedTo: message.id,
-                        textMessage: message.participant.firstName + " عزیز، مسابقه ی این هفته تموم شده  🙄 \nتا ساعت " + new Date(Game.end).getHours() + ':' + new Date(Game.end).getMinutes() + " بیشتر وقتی نداشتی. چهارشنبه هفته ی بعدی همین موقع دوباره مسابقه خواهیم داشت.\n @" + message.participant.username
+                        textMessage: message.participant.firstName + " عزیز، مسابقه ی این هفته تموم شده  🙄 \nتا ساعت " + new Date(this.questionPack.endsAt).getHours() + ':' + new Date(this.questionPack.endsAt).getMinutes() + " بیشتر وقتی نداشتی. چهارشنبه هفته ی بعدی همین موقع دوباره مسابقه خواهیم داشت.\n @" + userData.user.username
                     }, {
-                        onSent: function () {
-                        }
+                        onSent: function () {}
                     }));
                 } else {
                     let commandsList = BotClient.botSecondLevelCommands.reduce((acc, command) => acc + '/' + command + "\n", '');
 
-                    if (!BotClient.Users[message.participant.id]) {
+                    if(!userData.user.p2pThread || !userData.answer.startedAt) {//user == undefined
                         BotClient.client.createThread({
                             title: 'takiBOT',
                             type: 'NORMAL',
-                            invitees: [{id: message.participant.username, idType: 'TO_BE_USER_USERNAME'}],
+                            invitees: [{id: userData.user.username, idType: 'TO_BE_USER_USERNAME'}],
                             message: {
                                 uniqueId: new Date().getTime() * Math.random(),
                                 text: "سلام " + message.participant.firstName + "،\nبه مسابقه ی این هفته خوش اومدی. موضوع مسابقه ی این هفته " + BotClient.Game.title + " هست. \nیادت نره تا ساعت " + new Date(BotClient.Game.end).getHours() + ':' + new Date(BotClient.Game.end).getMinutes() + " بیشتر وقت نداری برای تموم کردن بازی. هر کجای بازی که باشی و وقت تموم بشه امتیاز آخرت رو توی گروه میفرستم و به اسمت ثبت میکنم. سعی کن جواب سوال هارو با دقت و سرعت بفرستی که همه ی مراحل رو باهم پیش بریم.\n\rبرای ارتباط با من میتونی از لیست پایین استفاده کنی. کافیه یکی از دستورات زیر رو برام بفرستی تا بقیه ی راه رو نشونت بدم. \n\n" + commandsList + "\nحالا برای شروع بازی دستور /شروع رو تایپ کن و بفرست واسم. به همین سادگی \nLet's Go 😉",
@@ -223,24 +287,31 @@ class BotClientClass extends ChatClientBaseClass {
                                 type: 1
                             }
                         }, function (res) {
+                            bound(()=> {
+                                SSOUsersClass.updateUserBySSOId(userData.user.SSOId, {p2pThread: (!res.hasError ? res.result.thread.id: null)})
+                            })
                         });
                     } else {
+
                         BotClient.botSender(BotClient.client.replyTextMessage({
                             threadId: message.conversation.id,
                             repliedTo: message.id,
-                            textMessage: BotClient.Users[message.participant.id].name + " عزیز، قبلا تو مسابقه ی این هفته شرکت کردی و امتیاز " + BotClient.Users[message.participant.id].score + " را بدست آوردی.\n منتظر مسابقه ی بعدی باش 😉."
+                            textMessage: userData.user.name + " عزیز، قبلا تو مسابقه ی این هفته شرکت کردی و امتیاز " + userData.answer.score + " را بدست آوردی.\n منتظر مسابقه ی بعدی باش 😉."
                         }, {
                             onSent: function () {
                             }
                         }));
                     }
                 }
+                // const use = SSOUsers.findOne({username: message.participant.username});
+                // BotClient.sendTextMessage(use.p2pThread, 'salaam')
                 break;
 
             case 'finish':
-                delete BotClient.Users[message.participant.id];
+                //userData.updateAnswer({finishedAt: new Date()})
+                userData.answer.finishedAt = new Date();
+                //delete BotClient.Users[message.participant.id];
                 break;
-
             case 'scoreboard':
                 if (message.participant.username === BotClient.Game.god) {
                     if (BotClient.Result.length) {
@@ -276,212 +347,192 @@ class BotClientClass extends ChatClientBaseClass {
             default:
                 break;
         }
-
     }
-    handleNextLevelCommand(message, nextLevelCommands){
-        if (!BotClient.Users[message.participant.id]) {
+    handleNextLevelCommand = function (message, nextLevelCommands, userData) {
+        if(!userData.answer.originThreadId) {
             BotClient.botSender(BotClient.client.sendTextMessage({
                 threadId: message.threadId,
                 textMessage: "برای شروع بازی باید بری داخل گروه تاک قد کشیده و دستور /start@takiBOT رو اجرا کنی تا یه بار دیگه مسابقه برات شروع بشه 😎"
             }, {}));
-        } else {
-            switch (nextLevelCommands[1]) {
-                case 'شروع':
-                    if (BotClient.Users[message.participant.id].currentQuestion >= 0) {
-                        BotClient.botSender(BotClient.client.sendTextMessage({
-                            threadId: message.threadId,
-                            textMessage: "قبلا بازی رو شروع کردی🤔،\nامتیازت هم تا اینجا " + BotClient.Users[message.participant.id].score + " شده. اگه میخوای بازی رو ادامه بدی دستور /بعدی رو بفرست واسم. اگر هم مطمئنی که میخوای بازی رو تموم کنی دستور /پایان رو بفرست واسم تا امتیازهاتو ثبت کنم."
-                        }, {}));
-                    } else if (BotClient.Users[message.participant.id].finished) {
-                        BotClient.gameEnded(message.threadId, BotClient.Users[message.participant.id].score, message.participant.id);
-                    } else {
-                        BotClient.Users[message.participant.id].currentQuestion = 0;
-                        BotClient.Users[message.participant.id].score = 0;
 
-                        BotClient.sendQuestion(message.threadId, BotClient.Questions[0], 0, message.participant.id);
-                    }
-                    break;
-
-                case 'بعدی':
-                    const User = BotClient.Users[message.participant.id];
-
-                    if (User.currentQuestion > -1) {
-                        if (BotClient.Questions.length > User.currentQuestion + 1) {
-                            User.currentQuestion += 1;
-                            BotClient.sendQuestion(message.threadId, BotClient.Questions[User.currentQuestion], User.score, message.participant.id);
-                        } else {
-                            BotClient.gameEnded(message.threadId, User.score, message.participant.id);
-                        }
-                    } else {
-                        BotClient.botSender(BotClient.client.sendTextMessage({
-                            threadId: message.threadId,
-                            textMessage: "هنوز بازی رو شروع نکردی، برای شروع بازی دستور /شروع رو ارسال کن برام."
-                        }, {}));
-                    }
-                    break;
-
-                case 'پایان':
-                    BotClient.gameEnded(message.threadId, BotClient.Users[message.participant.id].score, message.participant.id);
-                    break;
-
-                case 'دستورها':
-                    let commandsList = BotClient.botSecondLevelCommands.reduce((acc, command) => acc + '/' + command + "\n", '');
-                    BotClient.botSender(BotClient.client.sendTextMessage({
-                        threadId: message.threadId,
-                        textMessage: "لیست دستورهایی که برای من تعریف شده شامل این موارده: \n\n" + commandsList + "\nاگه نمیدونی الان باید چطوری با دستورهای من کار کنی یا توی مسابقه شرکت کنی، میتونی از دوستان پشتیبانی مسابقه، مثلا آقای وحید آصفی یا هادی یادگاری راهنمایی بگیری."
-                    }, {}));
-                    break;
-
-                case 'امتیاز':
-                    BotClient.botSender(BotClient.client.sendTextMessage({
-                        threadId: message.threadId,
-                        textMessage: "امتیاز تا این لحظه\n" + BotClient.Users[message.participant.id].score + "\n"
-                    }, {}));
-                    break;
-
-                default:
-                    BotClient.botSender(BotClient.client.sendTextMessage({
-                        threadId: message.threadId,
-                        textMessage: "این دستور برای من تعریف نشده، لیست دستورهای من رو میتونی با فرستادن یه پیام حاوی /دستورها بگیری.\n\nمثلا برای شروع بازی میتونی دستور /شروع رو ارسال کنی واسم."
-                    }, {}));
-                    break;
-            }
+            return;
         }
-    }
-    handleReplyMessages(message) {
-        if (message.replyInfo && message.replyInfo.systemMetadata && typeof message.replyInfo.systemMetadata === 'string') {
-            try {
-                const messageMeta = JSON.parse(message.replyInfo.systemMetadata);
-                const questionUnique = messageMeta.id;
-                const question = BotClient.Questions.find(q => q.unique === questionUnique);
+        switch (nextLevelCommands[1]) {
+            case 'شروع':
+                if (userData.answer.currentQuestion >= 0) {
+                    BotClient.botSender(BotClient.client.sendTextMessage({
+                        threadId: message.threadId,
+                        textMessage: "قبلا بازی رو شروع کردی🤔،\nامتیازت هم تا اینجا " + userData.answer.score + " شده. اگه میخوای بازی رو ادامه بدی دستور /بعدی رو بفرست واسم. اگر هم مطمئنی که میخوای بازی رو تموم کنی دستور /پایان رو بفرست واسم تا امتیازهاتو ثبت کنم."
+                    }, {}));
+                } else if (userData.answer.finishedAt) {
+                    BotClient.gameEnded(message.threadId, userData.answer.score, message.participant.id, userData);
+                } else {
+                    userData.answer.currentQuestion = 0;
+                    userData.answer.score = 0;
+                    userData.answer.startedAt = new Date();
+                    BotClient.sendQuestion(message.threadId, BotClient.Questions[0], 0, message.participant.id, userData);
+                }
+                break;
 
-                if (question && Array.isArray(question.answers)) {
-                    if (question.id != BotClient.Users[message.participant.id].currentQuestion) {
-                        BotClient.botSender(BotClient.client.sendTextMessage({
-                            threadId: message.threadId,
-                            textMessage: "جواب این سوال رو قبلا مشخص کردی، امتیازش هم ثبت شده، برو سراغ سوال های بعدی 😏 ...\nبرای گرفتن سوال بعدی کافیه دستور /بعدی رو بفرستی واسم تا سوال جدیدی دریافت کنی."
-                        }, {}));
+            case 'بعدی':
+                if (userData.answer.currentQuestion > -1) {
+                    if (BotClient.Questions.length > userData.answer.currentQuestion + 1) {
+                        userData.answer.currentQuestion += 1;
+                        //userData.updateAnswer({currentQuestion: userData.answer.currentQuestion + 1})
+
+                        BotClient.sendQuestion(message.threadId, BotClient.Questions[userData.answer.currentQuestion], userData.answer.score, message.participant.id, userData);
                     } else {
-                        if (question.answers.includes(message.message) || question.answers.includes(message.message.toLowerCase())) {
+                        BotClient.gameEnded(message.threadId, userData.answer.score, message.participant.id, userData);
+                    }
+                } else {
+                    BotClient.botSender(BotClient.client.sendTextMessage({
+                        threadId: message.threadId,
+                        textMessage: "هنوز بازی رو شروع نکردی، برای شروع بازی دستور /شروع رو ارسال کن برام."
+                    }, {}));
+                }
+                break;
 
-                            if (BotClient.Users[message.participant.id].currentQuestion === BotClient.Users[message.participant.id].lastAnsweredQuestion) {
-                                BotClient.Users[message.participant.id].score += question.positive - 1;
-                            } else {
-                                BotClient.Users[message.participant.id].score += question.positive;
+            case 'پایان':
+                BotClient.gameEnded(message.threadId, userData.answer.score, message.participant.id, userData);
+                break;
+
+            case 'دستورها':
+                let commandsList = BotClient.botSecondLevelCommands.reduce((acc, command) => acc + '/' + command + "\n", '');
+                BotClient.botSender(BotClient.client.sendTextMessage({
+                    threadId: message.threadId,
+                    textMessage: "لیست دستورهایی که برای من تعریف شده شامل این موارده: \n\n" + commandsList + "\nاگه نمیدونی الان باید چطوری با دستورهای من کار کنی یا توی مسابقه شرکت کنی، میتونی از دوستان پشتیبانی مسابقه، مثلا آقای وحید آصفی یا هادی یادگاری راهنمایی بگیری."
+                }, {}));
+                break;
+
+            case 'امتیاز':
+                BotClient.botSender(BotClient.client.sendTextMessage({
+                    threadId: message.threadId,
+                    textMessage: "امتیاز تا این لحظه\n" + userData.answer.score + "\n"
+                }, {}));
+                break;
+
+            default:
+                BotClient.botSender(BotClient.client.sendTextMessage({
+                    threadId: message.threadId,
+                    textMessage: "این دستور برای من تعریف نشده، لیست دستورهای من رو میتونی با فرستادن یه پیام حاوی /دستورها بگیری.\n\nمثلا برای شروع بازی میتونی دستور /شروع رو ارسال کنی واسم."
+                }, {}));
+                break;
+        }
+        //}
+    }
+    handleReplyMessages = function (message, userData) {
+        try {
+            const messageMeta = JSON.parse(message.replyInfo.systemMetadata);
+            const questionUnique = messageMeta.id;
+            const question = BotClient.Questions.find(q => q.unique === questionUnique);
+
+            if (question && Array.isArray(question.answers)) {
+                if (question.id != userData.answer.currentQuestion) {
+                    BotClient.botSender(BotClient.client.sendTextMessage({
+                        threadId: message.threadId,
+                        textMessage: "جواب این سوال رو قبلا مشخص کردی، امتیازش هم ثبت شده، برو سراغ سوال های بعدی 😏 ...\nبرای گرفتن سوال بعدی کافیه دستور /بعدی رو بفرستی واسم تا سوال جدیدی دریافت کنی."
+                    }, {}));
+                } else {
+                    if (question.answers.includes(message.message) || question.answers.includes(message.message.toLowerCase())) {
+
+                        if (userData.answer.currentQuestion === userData.answer.lastAnsweredQuestion) {
+                            //userData.updateAnswer({score: userData.answer.score + question.positive - 1})
+                            userData.answer.score += question.positive - 1;
+                        } else {
+                            //userData.updateAnswer({score: userData.answer.score + question.positive})
+                            userData.answer.score += question.positive;
+                        }
+                        //serData.updateAnswer({lastAnsweredQuestion: userData.answer.currentQuestion})
+                        userData.answer.lastAnsweredQuestion = userData.answer.currentQuestion;
+
+                        if (!BotClient.Game.firstToReachTreshold.hasOwnProperty('score') && userData.answer.score >= BotClient.Game.threshold) {
+
+                            BotClient.Game.firstToReachTreshold = {
+                                name: userData.answer.name,
+                                username: message.participant.name,
+                                score: userData.answer.score
+                            };
+
+                            BotClient.botSender(BotClient.client.replyTextMessage({
+                                threadId: userData.answer.originThreadId,
+                                repliedTo: userData.answer.originMessageId,
+                                textMessage: "تا اینجا " + BotClient.Game.firstToReachTreshold.name + " اولین نفری بوده که نصف بیشتر امتیازها رو تونسته کسب کنه، امتیازش الان " + BotClient.Game.firstToReachTreshold.score + " تا شده.\n\nزمان دقیق ارسال:\n" + new Intl.DateTimeFormat('fa', {
+                                    dateStyle: 'long',
+                                    timeStyle: 'medium'
+                                }).format(new Date())
+                            }, {
+                                onSent: function () {
+                                }
+                            }));
+                        }
+
+                        BotClient.botSender(BotClient.client.sendTextMessage({
+                            threadId: message.conversation.id,
+                            messageType: 'text',
+                            textMessage: "🎉🎈😀\nآفرین، جوابت درست بود. چند لحظه صبر کن تا مرحله ی بعدی رو برات بیارم.\n\nامتیازت تا الان شده: " + userData.answer.score
+                        }, {
+                            onSent: function () {
+                                //userData.updateAnswer({currentQuestion: userData.answer.currentQuestion + 1});
+                                userData.answer.currentQuestion += 1;
+                                BotClient.sendQuestion(message.conversation.id, BotClient.Questions[userData.answer.currentQuestion], userData.answer.score, message.participant.id);
                             }
+                        }));
+                    } else {
+                        //userData.updateAnswer({score: userData.answer.score - question.negative});
+                        //userData.updateAnswer({lastAnsweredQuestion: userData.answer.currentQuestion});
 
-                            BotClient.Users[message.participant.id].lastAnsweredQuestion = BotClient.Users[message.participant.id].currentQuestion;
+                        userData.answer.score -= question.negative;
+                        userData.answer.lastAnsweredQuestion = userData.answer.currentQuestion;
 
-                            if (!BotClient.Game.firstToReachTreshold.hasOwnProperty('score') && BotClient.Users[message.participant.id].score >= BotClient.Game.threshold) {
-
-                                BotClient.Game.firstToReachTreshold = {
-                                    name: BotClient.Users[message.participant.id].name,
-                                    username: message.participant.name,
-                                    score: BotClient.Users[message.participant.id].score
-                                };
-
-                                BotClient.botSender(BotClient.client.replyTextMessage({
-                                    threadId: BotClient.Users[message.participant.id].originThreadId,
-                                    repliedTo: BotClient.Users[message.participant.id].originMessageId,
-                                    textMessage: "تا اینجا " + BotClient.Game.firstToReachTreshold.name + " اولین نفری بوده که نصف بیشتر امتیازها رو تونسته کسب کنه، امتیازش الان " + BotClient.Game.firstToReachTreshold.score + " تا شده.\n\nزمان دقیق ارسال:\n" + new Intl.DateTimeFormat('fa', {
-                                        dateStyle: 'long',
-                                        timeStyle: 'medium'
-                                    }).format(new Date())
-                                }, {
-                                    onSent: function () {
-                                    }
-                                }));
-                            }
+                        if (userData.answer.score <= -10) {
+                            let userId = message.participant.id;
+                            let finishTime = new Date();
 
                             BotClient.botSender(BotClient.client.sendTextMessage({
                                 threadId: message.conversation.id,
                                 messageType: 'text',
-                                textMessage: "🎉🎈😀\nآفرین، جوابت درست بود. چند لحظه صبر کن تا مرحله ی بعدی رو برات بیارم.\n\nامتیازت تا الان شده: " + BotClient.Users[message.participant.id].score
+                                textMessage: "🔴😓\nمتاسفم، جوابت اشتباه بود. امتیازهای منفی ات هم خیلی زیاد شد.\n\nاز مسابقه حذف شدی و توی قرعه کشی هم شرکت داده نخواهی شد. امیدوارم تو مسابقه ی بعدی برنده باشی\nتا چهارشنبه هفته ی بعدی، خدانگهدار 😄"
                             }, {
                                 onSent: function () {
-                                    BotClient.Users[message.participant.id].currentQuestion += 1;
-                                    BotClient.sendQuestion(message.conversation.id, BotClient.Questions[BotClient.Users[message.participant.id].currentQuestion], BotClient.Users[message.participant.id].score, message.participant.id);
+                                    userData.updateAnswer({finishedAt: finishTime});
+                                    //userData.answer.finishedAt = new Date();
+                                }
+                            }));
+
+                            BotClient.botSender(BotClient.client.replyTextMessage({
+                                threadId: userData.answer.originThreadId,
+                                repliedTo: userData.answer.originMessageId,
+                                textMessage: "😈😈😈😈😈😈😈😈😈😈\n" + userData.user.name + " یکی از رقبای اصلیتون با امتیاز " + userData.user.score + " از دور بازی حذف شد.\n\nزمان دقیق ارسال:\n" + new Intl.DateTimeFormat('fa', {
+                                    dateStyle: 'long',
+                                    timeStyle: 'medium'
+                                }).format(finishTime)
+                            }, {
+                                onSent: function () {
+                                    userData.answer.finishedAt = finishTime;
+                                    // userData.updateAnswer({finishedAt: finishTime});
+
+
+                                    BotClient.Result.push({
+                                        id: userId,
+                                        name: userData.user.fullName || userData.user.name,
+                                        username: userData.user.username,
+                                        score: userData.answer.score,
+                                        time: finishTime.getTime()
+                                    });
                                 }
                             }));
                         } else {
-                            BotClient.Users[message.participant.id].score -= question.negative;
-                            BotClient.Users[message.participant.id].lastAnsweredQuestion = BotClient.Users[message.participant.id].currentQuestion;
-
-                            if (BotClient.Users[message.participant.id].score <= -10) {
-                                let userId = message.participant.id;
-                                let finishTime = new Date();
-
-                                BotClient.botSender(BotClient.client.sendTextMessage({
-                                    threadId: message.conversation.id,
-                                    messageType: 'text',
-                                    textMessage: "🔴😓\nمتاسفم، جوابت اشتباه بود. امتیازهای منفی ات هم خیلی زیاد شد.\n\nاز مسابقه حذف شدی و توی قرعه کشی هم شرکت داده نخواهی شد. امیدوارم تو مسابقه ی بعدی برنده باشی\nتا چهارشنبه هفته ی بعدی، خدانگهدار 😄"
-                                }, {
-                                    onSent: function () {
-                                        BotClient.Users[userId].finished = true;
-                                    }
-                                }));
-
-                                BotClient.botSender(BotClient.client.replyTextMessage({
-                                    threadId: BotClient.Users[userId].originThreadId,
-                                    repliedTo: BotClient.Users[userId].originMessageId,
-                                    textMessage: "😈😈😈😈😈😈😈😈😈😈\n" + BotClient.Users[userId].name + " یکی از رقبای اصلیتون با امتیاز " + BotClient.Users[userId].score + " از دور بازی حذف شد.\n\nزمان دقیق ارسال:\n" + new Intl.DateTimeFormat('fa', {
-                                        dateStyle: 'long',
-                                        timeStyle: 'medium'
-                                    }).format(finishTime)
-                                }, {
-                                    onSent: function () {
-                                        BotClient.Users[userId].finished = true;
-
-                                        BotClient.Result.push({
-                                            id: userId,
-                                            name: BotClient.Users[userId].fullName || BotClient.Users[userId].name,
-                                            username: BotClient.Users[userId].username,
-                                            score: BotClient.Users[userId].score,
-                                            time: finishTime.getTime()
-                                        });
-                                    }
-                                }));
-                            } else {
-                                BotClient.botSender(BotClient.client.sendTextMessage({
-                                    threadId: message.conversation.id,
-                                    messageType: 'text',
-                                    textMessage: "🔴😓\nمتاسفم، جوابت اشتباه بود. بخاطر همین " + question.negative + " امتیاز منفی گرفتی.\n\nحالا دوتا کار میتونی بکنی:\n1. یا دوباره برو همین سوال رو ریپلای کن و جواب بده\n2. یا دستور /بعدی رو بفرست که سوال بعدی رو بفرستم واست.\n\nحواست باشه که بری سوال بعدی، امتیاز این سوال از دستت می پره"
-                                }, {}));
-                            }
+                            BotClient.botSender(BotClient.client.sendTextMessage({
+                                threadId: message.conversation.id,
+                                messageType: 'text',
+                                textMessage: "🔴😓\nمتاسفم، جوابت اشتباه بود. بخاطر همین " + question.negative + " امتیاز منفی گرفتی.\n\nحالا دوتا کار میتونی بکنی:\n1. یا دوباره برو همین سوال رو ریپلای کن و جواب بده\n2. یا دستور /بعدی رو بفرست که سوال بعدی رو بفرستم واست.\n\nحواست باشه که بری سوال بعدی، امتیاز این سوال از دستت می پره"
+                            }, {}));
                         }
                     }
                 }
-            } catch (e) {
-                console.log(e)
             }
-        }
-
-        if (message.systemMetadata && typeof message.systemMetadata === 'string') {
-            try {
-                const newUserData = JSON.parse(message.systemMetadata);
-                const originMessageId = newUserData.messageId;
-                const originThreadId = newUserData.threadId;
-                const userId = newUserData.userId;
-
-                if (userId > 0 && originThreadId > 0 && originMessageId > 0) {
-                    BotClient.Users[userId] = {
-                        originThreadId: originThreadId,
-                        originMessageId: originMessageId,
-                        userId: userId,
-                        name: newUserData.name,
-                        fullName: newUserData.fullName,
-                        username: newUserData.username,
-                        currentQuestion: -1,
-                        lastAnsweredQuestion: -1,
-                        score: 0,
-                        finished: false
-                    };
-                } else {
-                    throw new Error('Not a valid user, userId', userId);
-                }
-            } catch (e) {
-                console.log(e);
-            }
+        } catch (e) {
+            console.log(e)
         }
     }
     messageIsOuterCommand(message) {
@@ -507,8 +558,8 @@ class BotClientClass extends ChatClientBaseClass {
         BotClient.Game.stat.msgSendCount++;
     }
 
-    sendQuestion(thread, question, score, userId) {
-        if (question && question.id >= 0 && new Date().getTime() < BotClient.Game.end && !BotClient.Users[userId].finished) {
+    sendQuestion(thread, question, score, userId, userData) {
+        if (question && question.id >= 0 && new Date().getTime() < this.questionPack.endsAt && !userData.answer.finishedAt) {
             BotClient.botSender(BotClient.client.sendTextMessage({
                     threadId: thread,
                     systemMetadata: {
@@ -521,12 +572,12 @@ class BotClientClass extends ChatClientBaseClass {
                 })
             );
         } else {
-            BotClient.gameEnded(thread, score, userId);
+            BotClient.gameEnded(thread, score, userId, userData);
         }
     }
 
-    gameEnded(thread, score, userId) {
-        if (!BotClient.Users[userId].finished) {
+    gameEnded(thread, score, userId, userData) {
+        if (!userData.answer.finishedAt) {
             let finishTime = new Date();
 
             BotClient.botSender(BotClient.client.sendTextMessage({
@@ -535,21 +586,22 @@ class BotClientClass extends ChatClientBaseClass {
             }, {}));
 
             BotClient.botSender(BotClient.client.replyTextMessage({
-                threadId: BotClient.Users[userId].originThreadId,
-                repliedTo: BotClient.Users[userId].originMessageId,
-                textMessage: BotClient.Users[userId].name + " در مسابقه ی این هفته امتیاز " + score + " را بدست آورد.\n\nزمان دقیق ارسال:\n" + new Intl.DateTimeFormat('fa', {
+                threadId: userData.answer.originThreadId,
+                repliedTo: userData.answer.originMessageId,
+                textMessage: userData.user.name + " در مسابقه ی این هفته امتیاز " + score + " را بدست آورد.\n\nزمان دقیق ارسال:\n" + new Intl.DateTimeFormat('fa', {
                     dateStyle: 'long',
                     timeStyle: 'medium'
                 }).format(finishTime)
             }, {
                 onSent: function () {
-                    BotClient.Users[userId].finished = true;
+                    userData.answer.finishedAt = new Date();
+                    //BotClient.Users[userId].finished = true;
 
                     BotClient.Result.push({
                         id: userId,
-                        name: BotClient.Users[userId].fullName || BotClient.Users[userId].name,
-                        username: BotClient.Users[userId].username,
-                        score: BotClient.Users[userId].score,
+                        name: userData.user.fullName || userData.user.name,
+                        username: userData.user.username,
+                        score: userData.answer.score,
                         time: finishTime.getTime()
                     });
                 }

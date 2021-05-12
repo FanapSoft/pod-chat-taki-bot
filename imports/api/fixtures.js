@@ -65,6 +65,7 @@ Meteor.startup(() => {
           threshold: 50,
           title: 'پک سوال اول',
           status: 3,
+          active: false,
           createdAt: new Date()
         }
       })

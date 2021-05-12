@@ -67,10 +67,18 @@ class ChatClientBaseClass {
         Configs.upsert(this.clientProfileKey, {$set: {value: userProfile}});
     }
 
+    sendTextMessage(threadId, textMessage, callback){
+        this.client.sendTextMessage({
+            threadId: threadId,
+            textMessage: textMessage
+        }, callback);
+    }
+
     /**
      * Implement this to listen to messageEvents
      */
     startListeningToMessages() {}
+
 }
 
 export default ChatClientBaseClass

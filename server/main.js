@@ -1,3 +1,5 @@
+import QuestionPacks from "../imports/api/collections/QuestionPacks";
+
 Object.defineProperty(Promise.prototype, 'then', {
     writable: true
 })
@@ -23,4 +25,13 @@ Meteor.startup( () => {
 
     BotClient.updateStatus(false, null)
     AdminClient.updateStatus(false, null);
+
+    BotClient.startChatClient();
+   /* QuestionPacks.find().forEach(item => {
+        QuestionPacks.update(item._id, {
+            $set: {
+                active: false
+            }
+        })
+    })*/
 });
