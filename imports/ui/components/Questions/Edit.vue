@@ -273,12 +273,14 @@ export default {
       this.dialog = false;
       this.resetMessages();
       this.item = {
+        packId: null,
         question: null,
         answers: [],
         correctAnswers: [],
         negativeScore: 3,
         positiveScore: 10,
-        order: 0
+        order: 1,
+        showAnswersToUser: false
       }
     },
     resetMessages() {

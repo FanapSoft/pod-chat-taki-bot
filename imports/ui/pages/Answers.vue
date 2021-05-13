@@ -4,12 +4,12 @@
       <div class="col-md-12">
         <v-card>
           <v-data-table
-              v-if="SSOUsersList"
+              v-if="answersList"
 
               disable-sort hide-default-footer disable-pagination
 
               :headers="listHeaders"
-              :items="SSOUsersList"
+              :items="answersList"
               :page.sync="pagination.currentPage"
               :loading="loading"
               :items-per-page="20"
@@ -27,15 +27,15 @@
               <v-toolbar
                   flat
               >
-                <v-toolbar-title>کاربران چت</v-toolbar-title>
+                <v-toolbar-title>پاسخ های کاربران</v-toolbar-title>
                 <v-divider
                     inset vertical
 
                     class="mx-4"
                 ></v-divider>
-<!--                <v-autocomplete
+                <v-autocomplete
                     v-model="filterPackId"
-                    :items="searchSSOUsersList"
+                    :items="searchQuestionPacksList"
                     :loading="isLoadingPacks"
                     :search-input.sync="searchPacks"
                     color="white"
@@ -49,7 +49,7 @@
                     label="انتخاب دسته سوالات"
                     placeholder="برای فیلتر عنوان دسته را تایپ کنید"
                     prepend-icon="mdi-database-search"
-                ></v-autocomplete>-->
+                ></v-autocomplete>
                 <v-spacer></v-spacer>
                 <span >{{ pagination.realCount.toLocaleString() }}</span>
                 <v-divider
@@ -57,35 +57,28 @@
 
                     class="mx-4"
                 ></v-divider>
-<!--                <add ></add>-->
               </v-toolbar>
             </template>
             <template v-slot:item.ind="{ item }">
-              {{ (pagination.skip ? pagination.skip + SSOUsersList.indexOf(item) + 1 : SSOUsersList.indexOf(item) + 1) }}
+              {{ (pagination.skip ? pagination.skip + answersList.indexOf(item) + 1 : answersList.indexOf(item) + 1) }}
             </template>
             <template v-slot:item.date="{ item }">
               <div>
-
 <!--                {{item.startsAt.toLocaleString()}}-->
-                {{new Intl.DateTimeFormat('fa', {
+                شروع:
+                {{item.startedAt ? new Intl.DateTimeFormat('fa', {
                   dateStyle: 'medium',
                   timeStyle: 'medium'
-              }).format(item.startsAt)}}
+              }).format(item.startedAt) : ''}}
               </div>
-              <div>{{new Intl.DateTimeFormat('fa', {
+              <div>
+                پایان:
+                {{item.finishedAt ? new Intl.DateTimeFormat('fa', {
                 dateStyle: 'medium',
                 timeStyle: 'medium'
-              }).format(item.endsAt)}}</div>
-            </template>
-            <template v-slot:item.status="{ item }">
-              <span v-if="item.status==1">شروع شده</span>
-              <span v-else-if="item.status==2">تمام شده</span>
-              <span v-if="item.status==3">شروع خواهد شد</span>
+              }).format(item.finishedAt) : ''}}</div>
             </template>
             <template v-slot:item.actions="{ item, index }">
-<!--              <edit
-                  :key="index"
-                  :question="item" @updateList="() => {SSOUsersList}"></edit>-->
               <v-icon
                   @click="deleteItem(item._id)"
                   size="20">mdi-trash-can</v-icon>
@@ -118,19 +111,20 @@
 
 <script>
 import {Meteor} from "meteor/meteor";
-import SSOUsers from "../../api/collections/SSOUsers";
+import Answers from "../../api/collections/Answers";
+import QuestionPacks from "../../api/collections/QuestionPacks";
 
 export default {
-  name: "Questions",
+  name: "Answers",
   components: {},
   data: () => ({
     dialogDelete: false,
     listHeaders: [
       {text: 'ردیف', value: "ind"},
-      {text: 'نام کاربری', value: "username"},
-      {text: 'نام ', value: "name"},
+      {text: 'امتیاز کسب شده', value: "score"},
+      {text: 'شروع/پایان', value: "date"},
+      {text: '', value: "correctAnswers"},
       {text: 'فعالیت ها', value: "actions"},
-
     ],
     loading: false,
     pagination: {
@@ -152,20 +146,28 @@ export default {
   },
   meteor: {
     $subscribe: {
-      'SSOUsers': []
+      'Answers': [],
+      'QuestionPacks': []
     },
-    searchSSOUsersList() {
+    searchQuestionPacksList() {
       let reg = new RegExp(this.searchPacks);
       this.isLoadingPacks = false;
-      return SSOUsers.find({title: {$regex: reg} })
+      return QuestionPacks.find({title: {$regex: reg} })
     },
-    SSOUsersList() {
+    answersList() {
       this.loading = true;
-      //this.pagination.currentPage;
       this.calcCurrentPage();
 
-      const count = SSOUsers.find().count();
-      const res = SSOUsers.find({}, {sort: {createdAt: -1}, limit: this.pagination.perPage, skip: this.pagination.skip});
+      let packId = null;
+
+      if(this.$route.query.packId) {
+        packId = this.$route.query.packId
+      }
+
+      const field = packId ? {packId: packId} : {}
+
+      const count = Answers.find().count();
+      const res = Answers.find(field, {sort: {createdAt: -1}, limit: this.pagination.perPage, skip: this.pagination.skip});
       this.pagination.count = count ? Math.ceil(count / this.pagination.perPage) : 1;
       this.pagination.realCount = count;
       this.loading = false;
@@ -175,16 +177,16 @@ export default {
   watch: {
     filterPackId(val) {
       if(val)
-        this.$router.push('/questions?packId=' + val)
+        this.$router.push('/answers?packId=' + val)
       else
-        this.$router.push('/questions')
+        this.$router.push('/answers')
     },
     searchPacks (val) {
       if (this.isLoadingPacks) return
 
       this.isLoadingPacks = true
 
-      this.searchSSOUsersList
+      this.searchQuestionPacksList
     },
     'pagination.currentPage'(val) {
       this.refreshList();
@@ -205,7 +207,7 @@ export default {
       this.refreshList()
     },
     async refreshList() {
-      this.SSOUsersList
+      this.answersList
       //await this.getItems(this.pagination.currentPage);
     },
     deleteItem (item) {

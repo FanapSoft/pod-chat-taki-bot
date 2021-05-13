@@ -65,6 +65,12 @@ export default {
           link: '/questions'
         },
         {
+          title: 'پاسخ ها',
+          icon: 'mdi-view-dashboard',
+          link: '/answers'
+        },
+
+        {
           title: 'کاربران',
           icon: 'mdi-view-dashboard',
           link: '/talkUsers'

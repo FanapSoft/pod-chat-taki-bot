@@ -155,7 +155,7 @@
 </template>
 
 <script>
-import moment from 'moment'
+import moment from 'jalali-moment'
 export default {
   name: "EditQuestionPack",
   props: {
