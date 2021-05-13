@@ -3,9 +3,10 @@ import bound from "../../../../imports/lib/bound";
 import Configs from "../../../../imports/api/collections/Configs";
 import SSOUsers, {SSOUsersClass} from "../../../../imports/api/collections/SSOUsers";
 import Answers, {AnswersClass} from "../../../../imports/api/collections/Answers";
-import QuestionPacks from "../../../../imports/api/collections/QuestionPacks";
+import QuestionPacks, {QuestionPackClass} from "../../../../imports/api/collections/QuestionPacks";
 import Questions from "../../../../imports/api/collections/Questions";
 import moment from 'jalali-moment'
+import BotLogs, {BotLogsClass} from "../../../../imports/api/collections/BotLogs";
 
 class BotClientClass extends ChatClientBaseClass {
     constructor() {
@@ -16,96 +17,6 @@ class BotClientClass extends ChatClientBaseClass {
         }
         super(defaultConfig);
 
-        this.Users = {};
-        this.Questions = [
-            {
-                id: '0',
-                unique: '4ac6320d-1649-453c-80f6-790fc39795b5',
-                title: 'واسه دست گرمی سال تاسیس فناپ رو بهم بگو!',
-                positive: 10,
-                negative: 3,
-                answers: ['۸۴', '84', '۱۳۸۴', '1384', 'هشتاد و چهار', 'هزار و سیصد و هشتاد و چهار']
-            },
-            {
-                id: '1',
-                unique: 'abe0019e-50bb-40e1-919f-87689fb6cab5',
-                title: 'یکم از مسائل روز بگیم، چطوره؟ آصفی در صف مرغ ایستاده. جالب اینکه هم از اول هم از آخر صف نفر یازدهمه. چند نفر توی صف مرغ هستن؟!',
-                positive: 10,
-                negative: 3,
-                answers: ['21', '۲۱', '۲۱ نفر', '21 nafar', '۲۱ nafar', '21 نفر']
-            },
-            {
-                id: '2',
-                unique: '414ddecf-19e2-4639-b052-d2e985e1706d',
-                title: "کم کم سختش کنیم.چطوره؟\nیادگاری و احمدی نیا از یه نقطه ی مشترک شروع به حرکت میکنن و ۴ متر از همدیگه دور میشن. بعد به سمت چپ خودشون سه متر دیگه هم حرکت میکنن. الان فاصله ی یادگاری و احمدی نیا چند متره؟!",
-                positive: 10,
-                negative: 3,
-                answers: ['10', '۱۰', '10 m', '10 متر', '10 metr', '۱۰ m', '۱۰ متر', '۱۰ metr', 'ده', 'ده متر']
-            },
-            {
-                id: '3',
-                unique: 'b36e718f-3d62-442f-b334-92c5e0b421cc',
-                title: "عجله کن که عقب نیفتی!\nتیم آقای مهرآرا هفت تا نیروی آقا داره که هر کودوم از اونها یک همکار خانم دارن.تیم آقای مهرآرا حداقل چند نفرن؟! (آقای مهرآرا رو هم حساب کنا)",
-                positive: 10,
-                negative: 3,
-                answers: ['۹', '۹ نفر', '9', '9 nafar', '9 ta', '۹ تا']
-            },
-            {
-                id: '4',
-                unique: '68e29e0c-b90c-4c7e-a0af-5b90b2434cf1',
-                title: 'در تیم آقای فرهادی 14 نفر خانم هستن و هشت نفر از اعضای تیم لپ تاپ دارن‌. 2 نفر نه خانم هستن نه لپ تاپ دارن! اگه پنج نفر از کسایی که لپ تاپ دارن خانم باشن آقای فرهادی چند نفر نیرو داره؟ (آقای فرهادی نیروی خودش نیستا)',
-                positive: 10,
-                negative: 3,
-                answers: ['۱۹', '۱۹ تا', '۱۹ نفر', '19', '19 ta', '19 nafar']
-            },
-            {
-                id: '5',
-                unique: 'fa3cee28-a4d3-453c-9ae7-aa5e4299091a',
-                title: "برادری به برادر کوچک ترش میگه دوسال پیش من سه برابر تو سن داشتم! ولی سه سال دیگه دو برابر تو سن خواهم داشت. برادر کوچیکه میگه ایول!\nبرادر کوچیکه الان چند سالشه؟!",
-                positive: 10,
-                negative: 3,
-                answers: ['7 sal', '7', '۷', '۷ سال']
-            },
-            {
-                id: '6',
-                unique: 'e9647760-da07-4e72-86b7-54e3ee55919f',
-                title: 'آقای باقری ۱۶ ساله توی فناپه و چهار برابر آقای واعظی سابقه کار داره. وقتی آقای باقری دوبرابر آقای واعظی سابقه کار داشته باشه یعنی چند ساله توی فناپه؟!',
-                positive: 10,
-                negative: 3,
-                answers: ['۲۴', '۲۴ سال', '24', '24 sal']
-            },
-            {
-                id: '7',
-                unique: '7e3e5382-9ebc-4086-a010-ac25d91a440e',
-                title: "این سوال آسونه. گذاشتمش اینجا یکم ریکاوری بشه مغزت. عدد بعدی رو بهم بگو:\n\n۱۲۱ - ۱۴۴ - ۱۶۹ - ۱۹۶- ؟؟\n",
-                positive: 10,
-                negative: 3,
-                answers: ['225', '۲۲۵']
-            },
-            {
-                id: '8',
-                unique: '300d62cc-159a-4de1-a06a-c94145727bf3',
-                title: "ماشین بازا این معادله رو حل کنن.\n" +
-                    "5 . 3 . 1\n" +
-                    "? . 4 . 2\n" +
-                    "این سوال نهمه ها. جواب شش نمیشه ها! دقت کن 😎",
-                positive: 10,
-                negative: 3,
-                answers: ['r', 'R']
-            },
-            {
-                id: '9',
-                unique: 'bc8a3042-a2c2-4b51-a858-2bf733ddd227',
-                title: "این سوالو جواب بدی نه تنها خیلی باهوشی بلکه به احتمال زیاد توی لیست برنده ها هم هستی. فقط به من بگو جای علامت سوال چه عددی بگذارم:\n\n" +
-                    "12 = 4 [] 2\n" +
-                    "72 = 3 [] 9\n" +
-                    "24 = 7 [] 5\n" +
-                    " ? = 8 [] 7\n",
-                positive: 10,
-                negative: 3,
-                answers: ['۱۵', '15']
-            }
-        ];
         this.Game = {
             god: 'f.naysee', // 😈
             gods: ['ma.amjadi', 'poddraw', 'n.soltani', 'f.naysee'],
@@ -117,10 +28,11 @@ class BotClientClass extends ChatClientBaseClass {
             end: new Date().setTime(new Date().getTime() + (1*60*60*1000)),//Date.parse('05/05/2021 18:15:00'),
             threads: [
                 475387, // تاک قد کشیده تستی
-                149486 // تاک قد کشیده
+                149486, // تاک قد کشیده
+                473534
             ],
             admins: [
-                'f.naysee'
+                'f.naysee', 'ma.amjadi'
             ],
             stat: {
                 msgSendCount: 0,
@@ -194,6 +106,10 @@ class BotClientClass extends ChatClientBaseClass {
     handleNewMessage(event) {
         const message = event.result.message;
 
+        if (message.participant.username !== Configs.botUsername){
+            QuestionPackClass.increaseTotalMessagesBotReceived(this.questionPack._id);
+        }
+
         const userData = {
         };
         userData.user = this.getUser(message);
@@ -218,12 +134,9 @@ class BotClientClass extends ChatClientBaseClass {
         }
 
         // Game BOT Management Commands
-        const managementCommands = message.message.match(/^\/\/(stats|load|unload|time|threads|addThread|removeThread|getGame|setGameStart|setGameEnd|setGameTreshold|setGameTitle)(\s(.*))?$/);
-        console.log(managementCommands)
+        const managementCommands = message.message.match(/^\/\/(load|unload|time|threads|addThread|removeThread|getGame|setGameStart|setGameEnd|setGameTreshold|setGameTitle)(\s(.*))?$/);
         if (managementCommands && managementCommands[1]) {
-            console.log('im here')
             this.handleManagementCommand(message, managementCommands, userData);
-            //this.updateUserData(userData);
         }
 
         const nextLevelCommands = message.message.match(/^\/(شروع|پایان|بعدی|امتیاز|دستورها)$/);
@@ -241,22 +154,7 @@ class BotClientClass extends ChatClientBaseClass {
     handleManagementCommand = function (message, managementCommands, userData){
 
         if (this.Game.gods.includes(message.participant.username)) {
-            console.log('im here')
                 switch (managementCommands[1]) {
-                    case 'stats':
-                        const usersCount = SSOUsers.find().count();
-                        let Statistics = {
-                            userCount: usersCount,//Object.keys(usersCount).length,
-                            sendMessages: BotClient.Game.stat.msgSendCount,
-                            ReceiveMessage: BotClient.Game.stat.msgReceiveCount
-                        };
-
-                        BotClient.botSender(BotClient.client.sendTextMessage({
-                            threadId: message.threadId,
-                            textMessage: JSON.stringify(Statistics)
-                        }, {}));
-                        break;
-
                     case 'load':
                         let tempInterval = setInterval(function () {
                             BotClient.botSender(BotClient.client.sendTextMessage({
@@ -354,6 +252,7 @@ class BotClientClass extends ChatClientBaseClass {
 
         switch (command[1]) {
             case 'start':
+                BotLogsClass.Log(userData.user.name + ' ربات را استارت کرد');
                 userData.answer.originThreadId = message.threadId;
                 userData.answer.originMessageId = message.id;
                 if (new Date().getTime() < this.questionPack.startsAt) {
@@ -425,9 +324,13 @@ class BotClientClass extends ChatClientBaseClass {
                 }
                 break;
             case 'finish':
+                BotLogsClass.Log(userData.user.name + ' دستور finish رو زد')
+
                 userData.answer.finishedAt = new Date();
                 break;
             case 'scoreboard':
+                BotLogsClass.Log(userData.user.name + ' درخواست scoreboard کرد')
+
                 if (message.participant.username === BotClient.Game.god) {
                     if (BotClient.Result.length) {
                         const SortedResults = BotClient.Result.sort((a, b) => b.score - a.score || a.time - b.time).slice(0, 10);
@@ -464,7 +367,7 @@ class BotClientClass extends ChatClientBaseClass {
         }
     }
     handleNextLevelCommand = function (message, nextLevelCommands, userData) {
-        if(!userData.answer.originThreadId) {
+        if(!userData.answer.originThreadId || !Configs.findOne('botPermittedThreads').value.includes(userData.answer.originThreadId) ) {
             BotClient.botSender(BotClient.client.sendTextMessage({
                 threadId: message.threadId,
                 textMessage: "برای شروع بازی باید بری داخل گروه تاک قد کشیده و دستور /start@takiBOT رو اجرا کنی تا یه بار دیگه مسابقه برات شروع بشه 😎"
@@ -474,6 +377,8 @@ class BotClientClass extends ChatClientBaseClass {
         }
         switch (nextLevelCommands[1]) {
             case 'شروع':
+                BotLogsClass.Log(userData.user.name + ' بازی رو شروع کرد  ')
+
                 if (userData.answer.currentQuestion >= 0) {
                     BotClient.botSender(BotClient.client.sendTextMessage({
                         threadId: message.threadId,
@@ -490,6 +395,8 @@ class BotClientClass extends ChatClientBaseClass {
                 break;
 
             case 'بعدی':
+                BotLogsClass.Log(userData.user.name + ' درخواست سوال ' + userData.answer.currentQuestion + 1 + ' را کرد.' )
+
                 if (userData.answer.currentQuestion > -1) {
                     if (BotClient.questionsList.length > userData.answer.currentQuestion + 1) {
                         userData.answer.currentQuestion += 1;
@@ -508,6 +415,8 @@ class BotClientClass extends ChatClientBaseClass {
                 break;
 
             case 'پایان':
+                BotLogsClass.Log(userData.user.name + ' درخواست اتمام بازی کزد ')
+
                 BotClient.gameEnded(message.threadId, userData.answer.score, message.participant.id, userData);
                 break;
 
@@ -520,6 +429,8 @@ class BotClientClass extends ChatClientBaseClass {
                 break;
 
             case 'امتیاز':
+                BotLogsClass.Log(userData.user.name + ' میخواد ببینه چند امتیاز داره!')
+
                 BotClient.botSender(BotClient.client.sendTextMessage({
                     threadId: message.threadId,
                     textMessage: "امتیاز تا این لحظه\n" + userData.answer.score + "\n"
@@ -563,6 +474,8 @@ class BotClientClass extends ChatClientBaseClass {
                                 score: userData.answer.score
                             };
 
+                            BotLogsClass.Log(userData.user.name + ' **** حذاقل امتیاز رو کسب کرد. امتیاز کسب شده:' + userData.answer.score);
+
                             BotClient.botSender(BotClient.client.replyTextMessage({
                                 threadId: userData.answer.originThreadId,
                                 repliedTo: userData.answer.originMessageId,
@@ -603,6 +516,8 @@ class BotClientClass extends ChatClientBaseClass {
                         if (userData.answer.score <= -10) {
                             let userId = message.participant.id;
                             let finishTime = new Date();
+
+                            BotLogsClass.Log(userData.user.name + ' * خیلی منفی خورد و حذف شد')
 
                             BotClient.botSender(BotClient.client.sendTextMessage({
                                 threadId: message.conversation.id,
@@ -677,17 +592,36 @@ class BotClientClass extends ChatClientBaseClass {
 
     increaseTotalMessagesCount(){
         //TODO: Store total sent messages in current active Competition
-        BotClient.Game.stat.msgSendCount++;
+        //BotClient.Game.stat.msgSendCount++;
+        QuestionPackClass.increaseTotalMessagesSent(this.questionPack._id)
     }
 
     sendQuestion(thread, question, score, userId, userData) {
         if (question && new Date().getTime() < this.questionPack.endsAt && !userData.answer.finishedAt) {
+            let msg = "⚪ سوال "
+                + (parseInt(question.order) )
+                + "\n\n"
+                + question.question
+                + "\n("
+                + question.positiveScore
+                + "+ , "
+                + question.positiveScore
+                + "-)\n";
+
+            if(question.showAnswersToUser) {
+                question.answers.forEach(item => {
+                    msg += "\n" + `${item.key}. ` + item.text
+                });
+            }
+            msg += "\n\n"
+            msg +=  "برای جواب دادن به سوال و رفتن به مرحله ی بعدی کافیه جواب درست رو توی ریپلای این پیام به من بگی. منتظرم ..."
+
             BotClient.botSender(BotClient.client.sendTextMessage({
                     threadId: thread,
                     systemMetadata: {
                         id: question._id//question.unique
                     },
-                    textMessage: "⚪ سوال " + (parseInt(question.order) ) + "\n\n" + question.question + "\n(" + question.positiveScore + "+ , " + question.positiveScore + "-)\n\nبرای جواب دادن به سوال و رفتن به مرحله ی بعدی کافیه جواب درست رو توی ریپلای این پیام به من بگی. منتظرم ..."
+                    textMessage: msg
                 }, {
                     onSent: function () {
                     }
@@ -698,7 +632,7 @@ class BotClientClass extends ChatClientBaseClass {
         }
     }
 
-    gameEnded(thread, score, userId, userData) {
+    gameEnded = function (thread, score, userId, userData) {
         if (!userData.answer.finishedAt) {
             let finishTime = new Date();
 
@@ -713,18 +647,17 @@ class BotClientClass extends ChatClientBaseClass {
                 textMessage: userData.user.name
                     + " در مسابقه ی این هفته امتیاز "
                     + score + " را بدست آورد.\n\nزمان دقیق ارسال:\n"
-                    + moment(finishTime).format('jYYYY/jMM/jDD HH:mm:ss')/*new Intl.DateTimeFormat('fa', {
-                    dateStyle: 'short',
-                    timeStyle: 'medium',
-                    hour12: false,
-                    timeZone: 'Asia/Tehran'
-                }).format(finishTime)*/
+                    + moment(finishTime).format('jYYYY/jMM/jDD HH:mm:ss')
             }, {
                 onSent: function () {
-                    userData.answer.finishedAt = finishTime;
-                    BotClient.updateUserData(userData);
-                    //BotClient.Users[userId].finished = true;
+                    bound(()=> {
+                        userData.answer.finishedAt = finishTime;
+                        BotClient.updateUserData(userData);
 
+                        console.log('im here', finishTime)
+                    })
+
+                    //BotClient.Users[userId].finished = true;
                     BotClient.Result.push({
                         id: userId,
                         name: userData.user.fullName || userData.user.name,

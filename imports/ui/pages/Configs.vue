@@ -27,7 +27,7 @@
               <v-text-field v-model="adminToken"></v-text-field>
             </td>
           </tr>
-          <tr >
+<!--          <tr >
             <th>فاصله زمانی بین سوالات</th>
             <td>
               <v-row>
@@ -39,7 +39,18 @@
                 </v-col>
               </v-row>
             </td>
+          </tr>-->
+          <tr >
+            <th>تردهای مجاز</th>
+            <td>
+              <v-row>
+                <v-col cols="12">
+                  <v-text-field v-model="permittedThreads" dir="ltr"></v-text-field>
+                </v-col>
+              </v-row>
+            </td>
           </tr>
+
           <tr >
             <th>فعال بودن ربات </th>
             <td>
@@ -226,6 +237,19 @@ export default {
       },
       set() {
         this.toggleBotClientStatus()
+      }
+    },
+    permittedThreads: {
+      get(){
+        return this.configs ? this.configs.find(i => i._id === 'botPermittedThreads').value.join(',') : false
+      },
+      set(val) {
+        this.configs.forEach(item => {
+          if(item._id === 'botPermittedThreads') {
+            item.value = val.split(',');
+            item.hasChanges = true;
+          }
+        })
       }
     },
     adminClientIsActive: {

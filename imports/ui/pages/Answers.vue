@@ -1,15 +1,16 @@
 <template>
-  <v-container >
+  <v-container>
     <div class="row">
       <div class="col-md-12">
         <v-card>
           <v-data-table
               v-if="answersList"
 
-              disable-sort hide-default-footer disable-pagination
+              hide-default-footer disable-pagination
 
               :headers="listHeaders"
               :items="answersList"
+              :custom-sort="customSort"
               :page.sync="pagination.currentPage"
               :loading="loading"
               :items-per-page="20"
@@ -51,7 +52,7 @@
                     prepend-icon="mdi-database-search"
                 ></v-autocomplete>
                 <v-spacer></v-spacer>
-                <span >{{ pagination.realCount.toLocaleString() }}</span>
+                <span>{{ pagination.realCount.toLocaleString() }}</span>
                 <v-divider
                     inset vertical
 
@@ -59,29 +60,54 @@
                 ></v-divider>
               </v-toolbar>
             </template>
+            <template v-slot:header.date>
+              <v-row class="d-flex align-center">
+                <v-col cols="3"> شروع/پایان</v-col>
+                <v-col cols="9" class="px-0">
+                  <v-switch
+                    dense hide-details class="mt-0"
+
+                    v-model="startedAtNotNull"
+
+                    label="شروع شده ها"></v-switch>
+                  <v-switch
+                      dense hide-details class="mt-0"
+
+                      v-model="finishedAtNotNull"
+
+                      label="تمام شده ها"></v-switch>
+                </v-col>
+              </v-row>
+            </template>
             <template v-slot:item.ind="{ item }">
               {{ (pagination.skip ? pagination.skip + answersList.indexOf(item) + 1 : answersList.indexOf(item) + 1) }}
             </template>
             <template v-slot:item.date="{ item }">
               <div>
-<!--                {{item.startsAt.toLocaleString()}}-->
+                <!--                {{item.startsAt.toLocaleString()}}-->
                 شروع:
-                {{item.startedAt ? new Intl.DateTimeFormat('fa', {
-                  dateStyle: 'medium',
-                  timeStyle: 'medium'
-              }).format(item.startedAt) : ''}}
+                {{
+                  item.startedAt ? new Intl.DateTimeFormat('fa', {
+                    dateStyle: 'medium',
+                    timeStyle: 'medium'
+                  }).format(item.startedAt) : ''
+                }}
               </div>
               <div>
                 پایان:
-                {{item.finishedAt ? new Intl.DateTimeFormat('fa', {
-                dateStyle: 'medium',
-                timeStyle: 'medium'
-              }).format(item.finishedAt) : ''}}</div>
+                {{
+                  item.finishedAt ? new Intl.DateTimeFormat('fa', {
+                    dateStyle: 'medium',
+                    timeStyle: 'medium'
+                  }).format(item.finishedAt) : ''
+                }}
+              </div>
             </template>
             <template v-slot:item.actions="{ item, index }">
               <v-icon
                   @click="deleteItem(item._id)"
-                  size="20">mdi-trash-can</v-icon>
+                  size="20">mdi-trash-can
+              </v-icon>
             </template>
           </v-data-table>
 
@@ -120,15 +146,14 @@ export default {
   data: () => ({
     dialogDelete: false,
     listHeaders: [
-      {text: 'ردیف', value: "ind"},
+      {text: 'ردیف', value: "ind", sortable: false},
       {text: 'امتیاز کسب شده', value: "score"},
-      {text: 'شروع/پایان', value: "date"},
-      {text: '', value: "correctAnswers"},
-      {text: 'فعالیت ها', value: "actions"},
+      {text: 'شروع/پایان', value: "date", sortable: false},
+      {text: '', value: "correctAnswers", sortable: false},
+      {text: 'فعالیت ها', value: "actions", sortable: false},
     ],
     loading: false,
     pagination: {
-      limit: 10,
       count: 0,
       realCount: 0,
       skip: 0,
@@ -139,11 +164,13 @@ export default {
 
     isLoadingPacks: false,
     filterPackId: null,
-    searchPacks: null
+    searchPacks: null,
+    sortScore: -1,
+    startedAtNotNull: false,
+    finishedAtNotNull: false,
   }),
 
-  computed: {
-  },
+  computed: {},
   meteor: {
     $subscribe: {
       'Answers': [],
@@ -152,7 +179,7 @@ export default {
     searchQuestionPacksList() {
       let reg = new RegExp(this.searchPacks);
       this.isLoadingPacks = false;
-      return QuestionPacks.find({title: {$regex: reg} })
+      return QuestionPacks.find({title: {$regex: reg}})
     },
     answersList() {
       this.loading = true;
@@ -160,14 +187,27 @@ export default {
 
       let packId = null;
 
-      if(this.$route.query.packId) {
+      if (this.$route.query.packId) {
         packId = this.$route.query.packId
       }
 
       const field = packId ? {packId: packId} : {}
 
+      if(this.startedAtNotNull) {
+        field.startedAt = {$ne: null}
+      }
+      if(this.finishedAtNotNull) {
+        field.finishedAt = {$ne: null}
+      }
+
       const count = Answers.find().count();
-      const res = Answers.find(field, {sort: {createdAt: -1}, limit: this.pagination.perPage, skip: this.pagination.skip});
+      //const res = Answers.find(field, {sort: {score: this.sortScore, finishedAt: 1}, limit: this.pagination.perPage, skip: this.pagination.skip});
+
+      const res = Answers.find(field, {
+        sort: {score: this.sortScore, finishedAt: 1},
+        limit: this.pagination.perPage,
+        skip: this.pagination.skip
+      });
       this.pagination.count = count ? Math.ceil(count / this.pagination.perPage) : 1;
       this.pagination.realCount = count;
       this.loading = false;
@@ -176,12 +216,12 @@ export default {
   },
   watch: {
     filterPackId(val) {
-      if(val)
+      if (val)
         this.$router.push('/answers?packId=' + val)
       else
         this.$router.push('/answers')
     },
-    searchPacks (val) {
+    searchPacks(val) {
       if (this.isLoadingPacks) return
 
       this.isLoadingPacks = true
@@ -191,17 +231,38 @@ export default {
     'pagination.currentPage'(val) {
       this.refreshList();
     },
+    finishedAtNotNull(){
+      this.refreshList();
+    }
   },
-  mounted() {
-  },
+  mounted() {},
   methods: {
     calcCurrentPage() {
       if (!this.pagination.currentPage || this.pagination.currentPage == 1) {
         this.pagination.skip = 0;
         this.pagination.currentPage = 1;
       } else if (this.pagination.currentPage > 1) {
-        this.pagination.skip = this.pagination.limit * (this.pagination.currentPage - 1);
+        this.pagination.skip = this.pagination.perPage * (this.pagination.currentPage - 1);
       }
+    },
+    customSort(items, index, isDesc) {
+      /*items.sort((a, b) => {
+        if (index[0] === "score") {
+          if (!isDesc[0]) {
+            return a.score - b.score;
+          } else {
+            return b.score - a.score;
+          }
+        }
+      });*/
+      if (!isDesc[0]) {
+        this.sortScore = 1;
+      } else {
+        this.sortScore = -1;
+      }
+
+      this.answersList;
+      return items;
     },
     resetFields() {
       this.refreshList()
@@ -210,13 +271,13 @@ export default {
       this.answersList
       //await this.getItems(this.pagination.currentPage);
     },
-    deleteItem (item) {
+    deleteItem(item) {
       this.itemToDelete = item;
       this.dialogDelete = true
     },
-    deleteItemConfirm () {
-      Meteor.call('questionRemove', this.itemToDelete, (error, result) => {
-        if(error) {
+    deleteItemConfirm() {
+      Meteor.call('answerRemove', this.itemToDelete, (error, result) => {
+        if (error) {
           console.log(error);
           return;
         }
@@ -226,11 +287,11 @@ export default {
       this.closeDelete()
     },
 
-    close () {
+    close() {
       this.dialog = false
     },
 
-    closeDelete () {
+    closeDelete() {
       this.dialogDelete = false
     },
   },

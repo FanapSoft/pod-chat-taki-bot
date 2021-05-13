@@ -217,8 +217,8 @@ export default {
   },
   mounted() {
     this.$set(this, 'item' , this.pack);
-    this.startsAt = new moment(this.item.startsAt).format('YYYY/MM/DD HH:mm:ss');
-    this.endsAt = new moment(this.item.endsAt).format('YYYY/MM/DD HH:mm:ss');//this.item.endsAt.toLocaleDateString();
+    this.startsAt = moment(this.item.startsAt).format('YYYY/MM/DD HH:mm:ss');
+    this.endsAt = moment(this.item.endsAt).format('YYYY/MM/DD HH:mm:ss');//this.item.endsAt.toLocaleDateString();
   },
   watch: {
   }

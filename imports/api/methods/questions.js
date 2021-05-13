@@ -2,6 +2,7 @@ import { Meteor } from 'meteor/meteor';
 import Questions from '../collections/Questions'
 import {check, Match} from 'meteor/check'
 import QuestionPacks from "../collections/QuestionPacks";
+import BotClient from "../../../server/lib/talky/clients/botClientClass";
 
 Meteor.methods({
     'questionRemove'(quId) {
@@ -86,7 +87,6 @@ Meteor.methods({
         if(!packId || !packId.length)
             throw new Meteor.Error('Pack Id is required')
 
-        console.log(packId)
         const pack = QuestionPacks.findOne({_id: packId});
         if(!pack)
             throw new Meteor.Error('Pack Not Found')
@@ -95,10 +95,16 @@ Meteor.methods({
             packId: pack._id, question, answers, correctAnswers, negativeScore, positiveScore, order,
             createdAt: new Date()
         });*/
+
         return Questions.update(_id, {
             $set: {
                 packId: pack._id,
                 question, answers, correctAnswers, showAnswersToUser, negativeScore, positiveScore, order,
+            }
+        }, null, () => {
+            if(BotClient.client) {
+                BotClient.stopChatClient();
+                BotClient.startChatClient();
             }
         });
     },

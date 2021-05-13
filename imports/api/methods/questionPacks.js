@@ -1,6 +1,7 @@
 import { Meteor } from 'meteor/meteor';
 import QuestionPacks from '../collections/QuestionPacks'
 import {check, Match} from 'meteor/check'
+import BotClient from "../../../server/lib/talky/clients/botClientClass";
 
 Meteor.methods({
     'questionPackRemove'(packId) {
@@ -45,7 +46,14 @@ Meteor.methods({
 
         return QuestionPacks.insert({
             title, startsAt, endsAt, duration, threshold, status,
+            totalMessagesSentByBot: 0,
+            totalMessagesBotReceived: 0,
             createdAt: new Date()
+        },null,  () => {
+            if(BotClient.client) {
+                BotClient.stopChatClient();
+                BotClient.startChatClient();
+            }
         });
     },
     'deactivateAllPacksExcept'(pack) {
@@ -102,7 +110,12 @@ Meteor.methods({
                 endsAt,
                 duration: parseInt(duration),
                 threshold: parseInt(threshold),
-                status: parseInt(status)
+                status: parseInt(status),
+            }
+        },null, () => {
+            if(BotClient.client) {
+                BotClient.stopChatClient();
+                BotClient.startChatClient();
             }
         });
     },

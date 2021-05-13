@@ -9,6 +9,7 @@ import '../imports/api/methods'
 import '../imports/api/publications'
 import AdminClient from "./lib/talky/clients/adminClientClass";
 import BotClient from "./lib/talky/clients/botClientClass";
+import Configs from "../imports/api/collections/Configs";
 
 const SEED_USERNAME = 'admin';
 const SEED_PASSWORD = 'podtalky';
@@ -25,6 +26,7 @@ Meteor.startup( () => {
 
     BotClient.updateStatus(false, null)
     AdminClient.updateStatus(false, null);
+
 
     BotClient.startChatClient();
    /* QuestionPacks.find().forEach(item => {

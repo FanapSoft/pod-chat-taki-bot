@@ -41,24 +41,16 @@ Meteor.startup(() => {
         name: 'questionsDelayInSecond',
         val: {value: {enabled: true, seconds: 60}},
       },
+      {
+        name: 'botPermittedThreads',
+        val: {value: [473534, 475387, 149486]},
+      },
 
     ];
     data.forEach(item => Configs.upsert(item.name, {$set: item.val}));
 
-    data = [
-      {
-        startsAt: new Date(),
-        endsAt: new Date(new Date().setTime(new Date().getTime() + (1*60*60*1000))),
-        duration: 10,
-        threshold: 50,
-        title: 'پک سوال اول',
-        status: 3,
-        createdAt: new Date()
-      },
-    ];
-
     for(let i = 0; i< 27; i++) {
-      QuestionPacks.insert({$set: {
+      QuestionPacks.insert( {
           startsAt: new Date(),
           endsAt: new Date(new Date().setTime(new Date().getTime() + (1*60*60*1000))),
           duration: 10,
@@ -66,8 +58,9 @@ Meteor.startup(() => {
           title: 'پک سوال اول',
           status: 3,
           active: false,
+          totalMessagesSentByBot: 0,
+          totalMessagesBotReceived: 0,
           createdAt: new Date()
-        }
       })
     }
   }

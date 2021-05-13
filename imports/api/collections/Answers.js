@@ -12,7 +12,8 @@ import { Mongo } from 'meteor/mongo';
  * currentQuestion: -1,
  * lastAnsweredQuestion: -1,
  * originMessageId,
- * originThreadId
+ * originThreadId,
+ * createdAt
  */
 class Answers {
     constructor() {
@@ -28,9 +29,12 @@ class Answers {
                    lastAnsweredQuestion = -1,
                    originMessageId,
                    originThreadId
-               }){
+               }) {
         return this.collection.insert({
-            SSOUserId, packId, answersList, score, startedAt, finishedAt, currentQuestion, lastAnsweredQuestion, originMessageId, originThreadId
+            SSOUserId, packId, answersList, score,
+            startedAt, finishedAt, currentQuestion,
+            lastAnsweredQuestion, originMessageId,
+            originThreadId, createdAt: new Date()
         });
     }
 
