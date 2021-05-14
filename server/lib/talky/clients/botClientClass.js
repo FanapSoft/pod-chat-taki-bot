@@ -252,7 +252,14 @@ class BotClientClass extends ChatClientBaseClass {
 
         switch (command[1]) {
             case 'start':
-                BotLogsClass.Log(userData.user.name + ' ربات را استارت کرد');
+                if(!Configs.findOne('botPermittedThreads').value.includes(message.threadId)){
+                    BotClient.botSender(BotClient.client.sendTextMessage({
+                        threadId: message.threadId,
+                        textMessage: "برای شروع بازی باید بری داخل گروه تاک قد کشیده و دستور /start@takiBOT رو اجرا کنی تا یه بار دیگه مسابقه برات شروع بشه 😎"
+                    }, {}));
+                    return;
+                }
+                //console.log('im here')
                 userData.answer.originThreadId = message.threadId;
                 userData.answer.originMessageId = message.id;
                 if (new Date().getTime() < this.questionPack.startsAt) {
@@ -307,6 +314,7 @@ class BotClientClass extends ChatClientBaseClass {
                             }
                         }, function (res) {
                             bound(()=> {
+                                BotLogsClass.Log(userData.user.name + ' ربات را استارت کرد');
                                 SSOUsersClass.updateUserBySSOId(userData.user.SSOId, {p2pThread: (!res.hasError ? res.result.thread.id: null)})
                             })
                         });
@@ -635,6 +643,8 @@ class BotClientClass extends ChatClientBaseClass {
     gameEnded = function (thread, score, userId, userData) {
         if (!userData.answer.finishedAt) {
             let finishTime = new Date();
+
+            BotLogsClass.Log(userData.user.name + ' به پایان مسابقه رسید. ')
 
             BotClient.botSender(BotClient.client.sendTextMessage({
                 threadId: thread,

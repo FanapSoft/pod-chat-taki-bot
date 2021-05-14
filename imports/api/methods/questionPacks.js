@@ -29,7 +29,7 @@ Meteor.methods({
             endsAt,
             duration,
             threshold,
-            status
+            //status
         } = params;
 
         check(title, String);
@@ -42,10 +42,10 @@ Meteor.methods({
 
         check(duration, IsNumeric);
         check(threshold, IsNumeric);
-        check(status, IsNumeric);
+
 
         return QuestionPacks.insert({
-            title, startsAt, endsAt, duration, threshold, status,
+            title, startsAt, endsAt, duration, threshold, //status,
             totalMessagesSentByBot: 0,
             totalMessagesBotReceived: 0,
             createdAt: new Date()
@@ -80,8 +80,7 @@ Meteor.methods({
             startsAt,
             endsAt,
             duration,
-            threshold,
-            status
+            threshold
         } = params;
 
         if(!_id)
@@ -103,16 +102,19 @@ Meteor.methods({
         check(status, IsNumeric);
 */
 
-        QuestionPacks.update(_id, {
+        return QuestionPacks.update(_id, {
             $set: {
                 title,
                 startsAt,
                 endsAt,
                 duration: parseInt(duration),
-                threshold: parseInt(threshold),
-                status: parseInt(status),
+                threshold: parseInt(threshold)
             }
-        },null, () => {
+        },null, (error, result) => {
+            if(error) {
+                console.log(error);
+                return;
+            }
             if(BotClient.client) {
                 BotClient.stopChatClient();
                 BotClient.startChatClient();

@@ -45,10 +45,9 @@
                   v-model="startsAt"
 
                   :show="startsAtVisibility"
-                  @click="startsAtVisibility = true"
 
                   type="datetime"
-                  format="Y/M/D HH:mm:ss"
+                  format="YYYY/MM/DD HH:mm:ss"
                   display-format="jYYYY/jMM/jDD HH:mm:ss"
                   placeholder="تاریخ شروع"
                   element="startsAt-input"
@@ -70,7 +69,7 @@
                   v-model="endsAt"
 
                   type="datetime"
-                  format="Y/M/D HH:mm:ss"
+                  format="YYYY/MM/DD HH:mm:ss"
                   placeholder="تاریخ پایان"
                   element="endsAt-input"
               ></jalali-date-picker>
@@ -99,7 +98,7 @@
                   label=" threshold"
               ></v-text-field>
             </v-col>
-            <v-col
+<!--            <v-col
                 cols="12"
                 sm="6"
                 md="4"
@@ -127,7 +126,7 @@
                   item-value="value"
                   label="وضعیت پک">
               </v-select>
-            </v-col>
+            </v-col>-->
 
           </v-row>
         </v-container>
@@ -213,14 +212,20 @@ export default {
     resetMessages() {
       this.message = '';
       this.error = '';
+    },
+    loadPack(){
+      this.$set(this, 'item' , this.pack);
+      this.startsAt =  moment(this.item.startsAt).format('YYYY/MM/DD HH:mm:ss');
+      this.endsAt =  moment(this.item.endsAt).format('YYYY/MM/DD HH:mm:ss');//this.item.endsAt.toLocaleDateString();
     }
   },
   mounted() {
-    this.$set(this, 'item' , this.pack);
-    this.startsAt = moment(this.item.startsAt).format('YYYY/MM/DD HH:mm:ss');
-    this.endsAt = moment(this.item.endsAt).format('YYYY/MM/DD HH:mm:ss');//this.item.endsAt.toLocaleDateString();
+    this.loadPack();
   },
   watch: {
+    pack(){
+      this.loadPack();
+    }
   }
 }
 </script>

@@ -200,7 +200,7 @@ export default {
         field.finishedAt = {$ne: null}
       }
 
-      const count = Answers.find().count();
+      const count = Answers.find(field).count();
       //const res = Answers.find(field, {sort: {score: this.sortScore, finishedAt: 1}, limit: this.pagination.perPage, skip: this.pagination.skip});
 
       const res = Answers.find(field, {

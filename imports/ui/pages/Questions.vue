@@ -179,8 +179,8 @@ export default {
 
       const field = packId ? {packId: packId} : {}
 
-      const count = Questions.find().count();
-      const res = Questions.find(field, {sort: {createdAt: -1}, limit: this.pagination.perPage, skip: this.pagination.skip});
+      const count = Questions.find(field).count();
+      const res = Questions.find(field, {sort: {order: 1,createdAt: -1}, limit: this.pagination.perPage, skip: this.pagination.skip});
       this.pagination.count = count ? Math.ceil(count / this.pagination.perPage) : 1;
       this.pagination.realCount = count;
       this.loading = false;

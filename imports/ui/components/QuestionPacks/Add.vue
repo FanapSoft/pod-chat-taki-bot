@@ -49,10 +49,9 @@
                   v-model="startsAt"
 
                   :show="startsAtVisibility"
-                  @click="startsAtVisibility = true"
 
                   type="datetime"
-                  format="Y/M/D HH:mm:ss"
+                  format="YYYY/MM/DD HH:mm:ss"
                   display-format="jYYYY/jMM/jDD HH:mm:ss"
                   placeholder="تاریخ شروع"
                   element="startsAt-input"
@@ -73,8 +72,10 @@
               <jalali-date-picker
                   v-model="endsAt"
 
+                  :show="endsAtVisibility"
+
                   type="datetime"
-                  format="Y/M/D HH:mm:ss"
+                  format="YYYY/MM/DD HH:mm:ss"
                   placeholder="تاریخ پایان"
                   element="endsAt-input"
               ></jalali-date-picker>
@@ -99,36 +100,6 @@
                   label=" threshold"
               ></v-text-field>
             </v-col>
-            <v-col
-                cols="12"
-                sm="6"
-                md="4"
-            >
-              <v-select
-                  v-model="item.status"
-
-                  :items="[
-                      {
-                        text: 'تمام شده',
-                        value: 2
-                      },
-                      {
-                        text: 'شروع شده ',
-                        value: 1
-                      },
-                      {
-                        text: 'شروع خواهد شد',
-                        value: 3
-                      },
-
-                  ]"
-
-                  item-text="text"
-                  item-value="value"
-                  label="وضعیت پک">
-              </v-select>
-            </v-col>
-
           </v-row>
         </v-container>
       </v-card-text>

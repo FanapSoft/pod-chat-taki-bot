@@ -60,13 +60,11 @@
                 timeStyle: 'medium'
               }).format(item.endsAt)}}</div>
             </template>
-            <template v-slot:item.status="{ item }">
-              <span v-if="item.status==1">شروع شده</span>
-              <span v-else-if="item.status==2">تمام شده</span>
-              <span v-if="item.status==3">شروع خواهد شد</span>
+            <template v-slot:item.active="{ item }">
+              <v-switch v-model="item.active" @change="deactivateAllPacksExcept(item)"></v-switch>
             </template>
             <template v-slot:item.actions="{ item, index }">
-              <v-switch v-model="item.active" @change="deactivateAllPacksExcept(item)"></v-switch>
+
               <v-icon @click="addQuestionsTo(item)">mdi-plus</v-icon>
               <edit
                   :key="index"
@@ -119,7 +117,7 @@ export default {
       {text: 'مدت زمان', value: "duration"},
       {text: 'threshold', value: "threshold"},
       {text: 'عنوان پک سوال', value: "title"},
-      {text: 'وضعیت پک', value: "status"},
+      {text: 'وضعیت پک', value: "active"},
       {text: 'فعالیت ها', value: "actions"},
 
     ],
